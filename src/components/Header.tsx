@@ -4,10 +4,11 @@ import { useHotkeySequence } from '@tanstack/react-hotkeys'
 export default function Header() {
   const navigate = useNavigate()
 
-  // Navegação estilo Vim: "g h" volta pra home, "g r" abre o ranking.
+  // Navegação estilo Vim: "g h" home, "g r" ranking, "g p" pessoas.
   // Teclas simples são ignoradas enquanto o usuário digita em inputs (padrão da lib).
   useHotkeySequence(['G', 'H'], () => void navigate({ to: '/' }))
   useHotkeySequence(['G', 'R'], () => void navigate({ to: '/ranking' }))
+  useHotkeySequence(['G', 'P'], () => void navigate({ to: '/pessoas' }))
 
   return (
     <header className="site-header">
@@ -30,6 +31,13 @@ export default function Header() {
             activeProps={{ className: 'nav-link is-active' }}
           >
             🏆 Ranking
+          </Link>
+          <Link
+            to="/pessoas"
+            className="nav-link"
+            activeProps={{ className: 'nav-link is-active' }}
+          >
+            👥 Pessoas
           </Link>
         </div>
       </nav>

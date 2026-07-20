@@ -387,6 +387,14 @@ kbd {
   letter-spacing: 0.08em;
 }
 
+.pearl-total {
+  margin-top: 0.15rem;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .btn-plus {
   border: none;
   border-radius: 1rem;
@@ -575,6 +583,56 @@ kbd {
 /* ── Ranking ─────────────────────────────────────────────────────────────── */
 .ranking-section {
   margin-bottom: 2.4rem;
+}
+
+.period-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.6rem;
+}
+
+.chip {
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+}
+
+.chip:hover {
+  border-color: var(--grape);
+  color: var(--ink);
+}
+
+.chip.is-active {
+  border-color: var(--grape);
+  background: color-mix(in oklab, var(--grape) 16%, var(--card));
+  color: var(--ink);
+}
+
+.period-select {
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+}
+
+.period-select:focus {
+  outline: none;
+  border-color: var(--grape);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--grape) 22%, transparent);
 }
 
 .table-shell {

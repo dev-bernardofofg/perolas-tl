@@ -4,49 +4,29 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import type { PersonRow } from '#/server/people'
 
-export type RankedPhrase = {
-  id: number
-  text: string
-  personName: string
-  count: number
-}
-
-const MEDALS = ['🥇', '🥈', '🥉']
-
-function positionLabel(index: number) {
-  const medal = MEDALS[index]
-  return medal ? `${medal} ${index + 1}º` : `${index + 1}º`
-}
-
-const columnHelper = createColumnHelper<RankedPhrase>()
+const columnHelper = createColumnHelper<PersonRow>()
 
 const columns = [
-  columnHelper.display({
-    id: 'position',
-    header: 'Posição',
-    cell: ({ row }) => (
-      <span className="position-cell">{positionLabel(row.index)}</span>
-    ),
+  columnHelper.accessor('name', {
+    header: 'Pessoa',
+    cell: (info) => <strong>🗣️ {info.getValue()}</strong>,
   }),
-  columnHelper.accessor('text', {
-    header: 'Pérola',
-    cell: (info) => <span className="table-quote">“{info.getValue()}”</span>,
+  columnHelper.accessor('phraseCount', {
+    header: 'Pérolas no catálogo',
   }),
-  columnHelper.accessor('personName', {
-    header: 'Quem disse',
-  }),
-  columnHelper.accessor('count', {
-    header: 'Vezes dita',
+  columnHelper.accessor('totalSaid', {
+    header: 'Total de vezes ditas',
     cell: (info) => <strong className="table-count">{info.getValue()}×</strong>,
+  }),
+  columnHelper.accessor('createdAt', {
+    header: 'Registrada em',
+    cell: (info) => new Date(info.getValue()).toLocaleDateString('pt-BR'),
   }),
 ]
 
-export default function TopPhrasesTable({
-  data,
-}: {
-  data: Array<RankedPhrase>
-}) {
+export default function PeopleTable({ data }: { data: Array<PersonRow> }) {
   const table = useReactTable({
     data,
     columns,
@@ -72,10 +52,7 @@ export default function TopPhrasesTable({
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr
-              key={row.id}
-              className={row.index < 3 ? `podium podium-${row.index + 1}` : ''}
-            >
+            <tr key={row.id}>
               {row.getVisibleCells().map((cell) => (
                 <td key={cell.id}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
