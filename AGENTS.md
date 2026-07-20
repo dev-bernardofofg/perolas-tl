@@ -69,7 +69,10 @@ descontinuado). Prisma engines/esbuild já estão aprovados lá.
 - **QueryClient**: singleton no browser (`getQueryClient()` em `src/integrations/tanstack-query/root-provider.tsx`) — a coleção DB e o router PRECISAM compartilhar a mesma instância; dois clients = dados fantasma. No servidor, um client novo por request.
 - **Ids temporários**: inserts otimistas usam id negativo (`nextTempId()`); cards com `id < 0` têm o "+1" desabilitado até o refetch trazer o id real.
 - **/ranking**: TanStack Query puro (`useQuery` + `ensureQueryData` no loader, SSR ativo) + TanStack Table. Período via **search param** (`?periodo=YYYY-MM|total`, `validateSearch` com zod + `.catch` para URL inválida não quebrar; ausente = mês corrente). Agregações via `$queryRaw` (COUNT com `FILTER`/faixa de datas; `::int` nos COUNTs — sem cast o pg devolve BigInt e a serialização quebra).
-- **/pessoas**: listagem via `peopleQueryOptions` compartilhada (`src/lib/people-query.ts`) com o combobox do formulário (datalist nativo — sem lib de combobox).
+- **/pessoas**: listagem via `peopleQueryOptions` compartilhada (`src/lib/people-query.ts`) com o combobox do formulário (datalist nativo — sem lib de combobox). `listPeople` calcula **ritmo** (streak de dias consecutivos, dias em silêncio) e **badges** (Recordista, Lenda, Metralhadora, Acervo vivo, Cria nova) a partir de uma query de dias-por-pessoa em fuso Recife. Painel de **mesclagem** (`mergePeople`: move pérolas e apaga a origem — para apelidos que o slug não pega) e remoção de pessoa **sem pérolas** (`deletePerson`, guardado no servidor).
+- **Curadoria de pérolas**: editar texto/contexto e excluir direto no card (hover mostra as ações). Tudo via coleção: `onUpdate` também detecta mudança de texto/contexto e chama `updatePhrase`; `onDelete` chama `deletePhrase` (utterances caem em cascata). Otimista com rollback, como o resto.
+- **/retro** (`src/server/retro.ts`): retrospectiva mensal estilo Wrapped — pérola do mês, falador do mês, dia mais barulhento, revelação (quem estreou no mês) e totais. `period` ausente = mês mais recente com registro. Search param `?periodo=YYYY-MM`.
+- **/p/$id**: página compartilhável com OG meta (preview de link mostra frase + autor) e **download do card em PNG** gerado no canvas (`src/lib/card-image.ts`, zero deps; espera `document.fonts.ready` com teto de 2,5s para não travar se a fonte externa demorar). Botão de copiar link em cada card da home.
 - **Home extra** (`src/lib/home-queries.ts`): feed "Rolando agora" (`getFeed`, últimas 8 utterances; `isFirst` distingue registro de repetição) e **pérola do dia** (`getDailyPearl`, sorteio determinístico por `md5(dia-de-Recife || id)` priorizando frases sem utterance há 7+ dias — todo mundo vê a mesma o dia inteiro). `Phrase.context` é a historinha opcional. A invalidação pós-escrita da coleção cobre `['feed']` também.
 - **Hotkeys**: `useHotkey`/`useHotkeySequence` direto (o manager é singleton; `HotkeysProvider` é opcional e não foi usado). `Mod+K` foca o form, `Mod+Enter` submete, sequências `g h`/`g r` navegam. Teclas simples ignoram inputs por padrão.
 - **Tempo real (SSE)**: `src/routes/api/events.ts` é uma server route que faz poll de uma tupla de versão no banco (max/count de utterances e phrases) a cada 4s e empurra a versão via `text/event-stream`. `LiveUpdates` (montado no `__root`) abre um `EventSource` e, quando a versão muda, refaz a coleção + invalida feed/ranking/pessoas — a primeira versão pós-(re)conexão é só linha de base, não dispara refetch. A conexão se auto-encerra em 4min (abaixo do maxDuration de function na Vercel) e o `EventSource` reconecta nativamente (`retry: 3000`). Custo: uma function fica viva por aba aberta — ok para escala de escritório; se crescer, migrar para Electric SQL (exige replicação lógica no Neon, hoje desligada).
@@ -85,6 +88,7 @@ descontinuado). Prisma engines/esbuild já estão aprovados lá.
 
 ## Próximos passos possíveis
 
-- Excluir/editar pérolas (typos hoje são eternos); mesclar pessoas quando o slug não pegar (apelido vs nome).
-- Retrospectiva mensal, conquistas/badges, streaks — o ledger de utterances já suporta tudo.
-- Card compartilhável (imagem OG por pérola).
+- Busca/filtro por pessoa na home (live queries da coleção fazem client-side).
+- Auth leve ("quem registrou" via cookie de sessão server-side — sem localStorage) e ranking de deduradores.
+- Reações além do +1 (chorei/gelei/clássico); som de replay no +1.
+- Imagem OG server-side por pérola (satori/@vercel/og) para o preview do link já vir com o card renderizado.
