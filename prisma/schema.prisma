@@ -20,6 +20,8 @@ model Person {
 model Phrase {
   id         Int         @id @default(autoincrement())
   text       String
+  // a historinha por trás da frase — opcional, mas é o que faz rir em 2027
+  context    String?
   person     Person      @relation(fields: [personId], references: [id])
   personId   Int
   utterances Utterance[]

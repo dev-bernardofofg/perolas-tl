@@ -10,12 +10,13 @@ import {
 
 export type Phrase = Awaited<ReturnType<typeof listPhrases>>[number]
 
-// Pérolas alimentam também /ranking e /pessoas — depois de qualquer escrita,
-// marca esses caches como stale (fire-and-forget: não segura a transação).
+// Pérolas alimentam também /ranking, /pessoas e o feed — depois de qualquer
+// escrita, marca esses caches como stale (fire-and-forget: não segura a transação).
 function invalidateDerivedQueries() {
   const queryClient = getQueryClient()
   void queryClient.invalidateQueries({ queryKey: ['ranking'] })
   void queryClient.invalidateQueries({ queryKey: ['people'] })
+  void queryClient.invalidateQueries({ queryKey: ['feed'] })
 }
 
 // Coleção client-side (SSR desabilitado na rota que a usa — ver routes/index.tsx).
@@ -37,8 +38,16 @@ export const phrasesCollection = createCollection(
       await createPhrase({
         data:
           modified.personId > 0
-            ? { text: modified.text, personId: modified.personId }
-            : { text: modified.text, personName: modified.personName },
+            ? {
+                text: modified.text,
+                context: modified.context,
+                personId: modified.personId,
+              }
+            : {
+                text: modified.text,
+                context: modified.context,
+                personName: modified.personName,
+              },
       })
       invalidateDerivedQueries()
     },

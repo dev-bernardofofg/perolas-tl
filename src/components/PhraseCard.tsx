@@ -33,6 +33,7 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
   return (
     <article className="pearl-card">
       <blockquote className="pearl-quote">“{phrase.text}”</blockquote>
+      {phrase.context && <p className="pearl-context">{phrase.context}</p>}
       <div className="pearl-card-footer">
         <div className="pearl-meta">
           <span className="pearl-author">🗣️ {phrase.personName}</span>

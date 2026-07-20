@@ -15,6 +15,16 @@ export function currentPeriod(): string {
   }).format(new Date())
 }
 
+// "2026-07-20" no relógio de Recife — semente do sorteio da pérola do dia
+export function currentDay(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Recife',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
 export function monthRange(period: string): { start: Date; end: Date } {
   const [year, month] = period.split('-').map(Number)
   const next =

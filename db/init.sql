@@ -14,6 +14,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS "people_slug_key" ON "people"("slug");
 CREATE TABLE IF NOT EXISTS "phrases" (
     "id" SERIAL NOT NULL,
     "text" TEXT NOT NULL,
+    "context" TEXT,
     "personId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "phrases_pkey" PRIMARY KEY ("id"),

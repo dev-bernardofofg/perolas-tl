@@ -10,6 +10,7 @@ import { PERIOD_REGEX, PERIOD_TOTAL, currentPeriod, monthRange } from '#/lib/mon
 export type PhraseListRow = {
   id: number
   text: string
+  context: string | null
   personId: number
   personName: string
   monthCount: number
@@ -24,6 +25,12 @@ const CreatePhraseSchema = z
       .trim()
       .min(1, 'A frase não pode ficar em branco')
       .max(500, 'Calma, isso já virou um discurso — máximo de 500 caracteres'),
+    context: z
+      .string()
+      .trim()
+      .max(500, 'A historinha passou do limite — máximo de 500 caracteres')
+      .nullish()
+      .transform((v) => (v ? v : undefined)),
     personId: z.number().int().positive().optional(),
     personName: z.string().trim().min(1).max(80).optional(),
   })
@@ -48,7 +55,7 @@ const RankingSchema = z.object({
 export const listPhrases = createServerFn({ method: 'GET' }).handler(async () => {
   const { start, end } = monthRange(currentPeriod())
   const rows = await prisma.$queryRaw<Array<PhraseListRow>>`
-    SELECT ph.id, ph.text, ph."personId", ph."createdAt",
+    SELECT ph.id, ph.text, ph.context, ph."personId", ph."createdAt",
            pe.name AS "personName",
            COUNT(u.id)::int AS "totalCount",
            (COUNT(u.id) FILTER (WHERE u."saidAt" >= ${start} AND u."saidAt" < ${end}))::int AS "monthCount"
@@ -78,8 +85,73 @@ export const createPhrase = createServerFn({ method: 'POST' })
     }
     // a primeira utterance nasce junto: registrar a pérola = ela foi dita 1x
     return prisma.phrase.create({
-      data: { text: data.text, personId, utterances: { create: {} } },
+      data: {
+        text: data.text,
+        context: data.context,
+        personId,
+        utterances: { create: {} },
+      },
     })
+  })
+
+export type FeedEntry = {
+  id: number
+  saidAt: Date
+  text: string
+  personName: string
+  isFirst: boolean
+}
+
+export const getFeed = createServerFn({ method: 'GET' }).handler(async () => {
+  // isFirst distingue "registrou a pérola" de "disse de novo" (+1)
+  const rows = await prisma.$queryRaw<Array<FeedEntry>>`
+    SELECT u.id, u."saidAt", ph.text, pe.name AS "personName",
+           (u.id = (SELECT MIN(id) FROM "utterances" WHERE "phraseId" = ph.id)) AS "isFirst"
+    FROM "utterances" u
+    JOIN "phrases" ph ON ph.id = u."phraseId"
+    JOIN "people" pe ON pe.id = ph."personId"
+    ORDER BY u."saidAt" DESC, u.id DESC
+    LIMIT 8
+  `
+  return rows
+})
+
+export type DailyPearl = {
+  id: number
+  text: string
+  context: string | null
+  personName: string
+  totalCount: number
+  lastSaidAt: Date
+}
+
+const DailyPearlSchema = z.object({
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Dia inválido'),
+})
+
+export const getDailyPearl = createServerFn({ method: 'GET' })
+  .validator(DailyPearlSchema)
+  .handler(async ({ data }) => {
+    // Sorteio determinístico por dia (md5 do dia + id): todo mundo vê a mesma
+    // pérola o dia inteiro. Prioriza as esquecidas — quem não é dita há mais
+    // de 7 dias entra primeiro no sorteio.
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const rows = await prisma.$queryRaw<Array<DailyPearl>>`
+      WITH stats AS (
+        SELECT ph.id, ph.text, ph.context, pe.name AS "personName",
+               COUNT(u.id)::int AS "totalCount",
+               MAX(u."saidAt") AS "lastSaidAt"
+        FROM "phrases" ph
+        JOIN "people" pe ON pe.id = ph."personId"
+        LEFT JOIN "utterances" u ON u."phraseId" = ph.id
+        GROUP BY ph.id, pe.name
+      )
+      SELECT * FROM stats
+      ORDER BY ("lastSaidAt" >= ${sevenDaysAgo}) ASC NULLS FIRST,
+               md5(${data.day} || id::text) ASC
+      LIMIT 1
+    `
+    return rows[0] ?? null
   })
 
 export const registerUtterance = createServerFn({ method: 'POST' })

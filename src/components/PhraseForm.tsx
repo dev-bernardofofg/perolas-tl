@@ -20,7 +20,7 @@ export default function PhraseForm() {
   const { data: people } = useQuery(peopleQueryOptions)
 
   const form = useForm({
-    defaultValues: { text: '', personName: '' },
+    defaultValues: { text: '', context: '', personName: '' },
     onSubmit: async ({ value }) => {
       const typedName = normalizeName(value.personName)
       // pessoa já registrada? match por slug — "rafael lins" acha "Rafael Lins"
@@ -31,6 +31,7 @@ export default function PhraseForm() {
       const tx = phrasesCollection.insert({
         id: nextTempId(),
         text: value.text.trim(),
+        context: value.context.trim() || null,
         personId: existing?.id ?? -1,
         personName: existing?.name ?? typedName,
         monthCount: 1,
@@ -84,6 +85,40 @@ export default function PhraseForm() {
                 onChange={(e) => field.handleChange(e.target.value)}
                 aria-invalid={field.state.meta.errors.length > 0}
                 rows={3}
+              />
+              {field.state.meta.errors.length > 0 && (
+                <em role="alert" className="field-error">
+                  {field.state.meta.errors[0]}
+                </em>
+              )}
+            </div>
+          )}
+        </form.Field>
+
+        <form.Field
+          name="context"
+          validators={{
+            onChange: ({ value }) =>
+              value.length > 500
+                ? 'A historinha passou do limite — máximo de 500 caracteres'
+                : undefined,
+          }}
+        >
+          {(field) => (
+            <div className="field-group">
+              <label htmlFor={field.name} className="field-label">
+                Como foi <span className="field-optional">(opcional)</span>
+              </label>
+              <textarea
+                id={field.name}
+                name={field.name}
+                className="field-input field-textarea field-textarea-short"
+                placeholder="A historinha por trás — quem tava lá sabe…"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                aria-invalid={field.state.meta.errors.length > 0}
+                rows={2}
               />
               {field.state.meta.errors.length > 0 && (
                 <em role="alert" className="field-error">
