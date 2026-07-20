@@ -1,0 +1,82 @@
+<!-- intent-skills:start -->
+## Skill Loading
+
+Before editing files for a substantial task:
+- Run `pnpm dlx @tanstack/intent@latest list` from the workspace root to see available local skills.
+- If a listed skill matches the task, run `pnpm dlx @tanstack/intent@latest load <package>#<skill>` before changing files.
+- Use the loaded `SKILL.md` guidance while making the change.
+- Monorepos: when working across packages, run the skill check from the workspace root and prefer the local skill for the package being changed.
+- Multiple matches: prefer the most specific local skill for the package or concern you are changing; load additional skills only when the task spans multiple packages or concerns.
+<!-- intent-skills:end -->
+
+# Pérolas do Escritório
+
+Contador de frases icônicas do escritório. UI 100% em pt-BR, tom de zoeira.
+Cadastro de pérolas (frase + autor), botão "+1" com atualização otimista e
+ranking de frases/autores. Toda leitura/escrita passa por server functions +
+Prisma + Neon Postgres — **nunca** usar localStorage/sessionStorage.
+
+## Scaffold (como este projeto nasceu)
+
+Comando exato usado (TanStack CLI 0.69.6, 2026-07-20):
+
+```
+npx @tanstack/cli@latest create my-tanstack-app --agent --package-manager pnpm --tailwind --add-ons tanstack-query,prisma,neon
+```
+
+- React, starter blank, toolchain padrão. `--tailwind` está deprecated (sempre ativo) mas foi mantido no comando.
+- O conteúdo de `my-tanstack-app/` foi movido para a raiz do repo e o pacote renomeado para `perolas`.
+- Pós-scaffold: `npx @tanstack/intent@latest install` e `npx @tanstack/intent@latest list`.
+
+## Gotcha de ambiente: pnpm global quebrado nesta máquina
+
+O shim `C:\Users\User\AppData\Local\pnpm\bin\pnpm.ps1` aponta para um
+`@pnpm/exe` que nunca terminou o build (`.pnpm-needs-build` presente, sem
+`pnpm.exe`). Enquanto não for corrigido (ex.: `npm i -g pnpm`), use:
+
+```
+npx -y pnpm@latest <comando>
+```
+
+pnpm 11: aprovação de build scripts fica em `pnpm-workspace.yaml` →
+`allowBuilds` (o campo `pnpm.onlyBuiltDependencies` do package.json foi
+descontinuado). Prisma engines/esbuild já estão aprovados lá.
+
+## Stack e versões relevantes
+
+- TanStack Start 1.168 + Router (file-based em `src/routes/`), Vite 8, React 19, Tailwind v4
+- TanStack Query 5 (QueryClient compartilhado — ver Arquitetura)
+- TanStack DB `@tanstack/react-db` 0.1.x + `@tanstack/query-db-collection` 1.1 (pre-1.0, API pode mudar)
+- TanStack Form 1.33, Table 8.21, Hotkeys 0.10 (**alpha** — pinada por `^`, cuidado ao atualizar)
+- Prisma 7 (generator `prisma-client`, output `src/generated/prisma/`, driver adapter `@prisma/adapter-pg`, sem engines binárias no runtime)
+
+## Banco de dados (Neon Launchpad)
+
+- `vite-plugin-neon-new` (em `neon-vite-plugin.ts`, configurado com `dotEnvFile: '.env.local'`) provisiona um Postgres Neon **claimable** no primeiro `pnpm dev` se `DATABASE_URL` não existir, e roda o seed `db/init.sql`.
+- Variáveis em `.env.local` (gitignored): `DATABASE_URL` (pooler, runtime) e `DATABASE_URL_DIRECT` (direta, CLI). O banco foi **reivindicado na conta Neon do usuário em 2026-07-20** (sem prazo de expiração; gerenciável em console.neon.tech). Se um dia `DATABASE_URL` for removida, o plugin provisiona um novo banco claimable no próximo `pnpm dev`.
+- `prisma.config.ts` usa `DATABASE_URL_DIRECT` para a CLI (push/migrate/studio não podem passar pelo pooler); o runtime usa o pooler via `PrismaPg` em `src/db.ts`.
+- Scripts: `pnpm db:push`, `pnpm db:generate`, `pnpm db:studio`, `pnpm db:seed` (todos com `dotenv -e .env.local`).
+- Nunca prefixar segredos com `VITE_` (vão para o bundle client). A claim URL é a única exceção intencional do plugin (dev-only).
+- Schema: model `Phrase` → tabela `phrases` (`@@map`), índice em `count desc`. Manter `db/init.sql` em sincronia com `prisma/schema.prisma` (o init.sql roda só no provisionamento; o push reconcilia).
+
+## Arquitetura
+
+- **Server functions** (`src/server/phrases.ts`): único gateway para o banco. `createServerFn().validator(zod)` — nesta versão do Start, `.validator()` é o método atual; `.inputValidator()` está deprecated. Validação server-side com mensagens pt-BR; `adjustPhraseCount` aplica o delta do +1/−1 em um UPDATE atômico com `GREATEST(count + delta, 1)` (piso em 1, aceita delta > 1 porque cliques rápidos podem ser mesclados — ver abaixo).
+- **Coleção TanStack DB** (`src/db-collections/phrases.ts`): `queryCollectionOptions` sincroniza via `listPhrases`; `onInsert`/`onUpdate` persistem via server functions. **Não chamar `utils.refetch()` dentro dos handlers**: o wrapper da query-db-collection já faz `await refetch()` após o handler resolver (e só então descarta o otimista) — refetch duplicado cria corrida de queries stale (bug real que travou a UI num valor velho). Cliques rápidos no mesmo card podem ser **mesclados numa transação só** pelo TanStack DB; por isso `onUpdate` calcula `delta = modified.count - original.count` e envia o delta inteiro, nunca um ±1 fixo. Rollback automático em falha; erros chegam por `tx.isPersisted.promise`.
+- **SSR × TanStack DB**: coleções são client-side only. A rota `/` tem `ssr: false` + `await phrasesCollection.preload()` no loader (skill `@tanstack/db#meta-framework`). Não remover o `ssr: false`.
+- **QueryClient**: singleton no browser (`getQueryClient()` em `src/integrations/tanstack-query/root-provider.tsx`) — a coleção DB e o router PRECISAM compartilhar a mesma instância; dois clients = dados fantasma. No servidor, um client novo por request.
+- **Ids temporários**: inserts otimistas usam id negativo (`nextTempId()`); cards com `id < 0` têm o "+1" desabilitado até o refetch trazer o id real.
+- **/ranking**: TanStack Query puro (`useQuery` + `ensureQueryData` no loader, SSR ativo) + TanStack Table nas duas tabelas. Agregação por autor via `prisma.phrase.groupBy`.
+- **Hotkeys**: `useHotkey`/`useHotkeySequence` direto (o manager é singleton; `HotkeysProvider` é opcional e não foi usado). `Mod+K` foca o form, `Mod+Enter` submete, sequências `g h`/`g r` navegam. Teclas simples ignoram inputs por padrão.
+- **Erros de rede**: banner com "Tentar de novo" para falha de leitura; toast (`src/lib/toast.ts`, store com `useSyncExternalStore`, sem lib externa) para falha de escrita; `defaultErrorComponent`/`defaultNotFoundComponent` no router. Nada pode estourar tela branca.
+- **Tema**: dark mode só via `prefers-color-scheme` (o ThemeToggle do scaffold foi removido porque usava localStorage, proibido neste projeto).
+- **Devtools**: `consolePiping` desabilitado no `vite.config.ts` — o eco client↔server de console entra em loop de feedback quando um warning do React (ex.: hydration) aparece, inundando o terminal com GB de log.
+
+## Deploy
+
+- `pnpm build` (plugin Neon é inerte em produção) → precisa de `DATABASE_URL` real no ambiente de deploy (copiar do `.env.local` ou do console Neon).
+
+## Próximos passos possíveis
+
+- Normalizar autores (hoje o agrupamento é por string exata, com trim + colapso de espaços no create).
+- Excluir/editar pérolas; paginação se o acervo crescer.
