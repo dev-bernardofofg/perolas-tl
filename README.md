@@ -7,6 +7,11 @@ novo. Cada `+1` é um evento com data, então os cards mostram "X este mês · Y
 no total" e o ranking existe nas visões **mensal** (com navegação entre meses
 via `?periodo=YYYY-MM`) e **total**. A página `/pessoas` lista o elenco.
 
+Na home ainda tem: **pérola do dia** (sorteio determinístico que resgata
+frases esquecidas), o feed **"Rolando agora"** com os últimos acontecimentos,
+e o campo opcional **"Como foi"** para registrar a historinha por trás da
+frase.
+
 ## Stack
 
 - **TanStack Start** (React 19 + Vite 8) com server functions como único

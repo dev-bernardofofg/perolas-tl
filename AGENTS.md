@@ -56,6 +56,7 @@ descontinuado). Prisma engines/esbuild já estão aprovados lá.
 - Variáveis em `.env.local` (gitignored): `DATABASE_URL` (pooler, runtime) e `DATABASE_URL_DIRECT` (direta, CLI). O banco foi **reivindicado na conta Neon do usuário em 2026-07-20** (sem prazo de expiração; gerenciável em console.neon.tech). Se um dia `DATABASE_URL` for removida, o plugin provisiona um novo banco claimable no próximo `pnpm dev`.
 - `prisma.config.ts` usa `DATABASE_URL_DIRECT` para a CLI (push/migrate/studio não podem passar pelo pooler); o runtime usa o pooler via `PrismaPg` em `src/db.ts`.
 - Scripts: `pnpm db:push`, `pnpm db:generate`, `pnpm db:studio`, `pnpm db:seed` (todos com `dotenv -e .env.local`).
+- **Após `pnpm db:generate`, reinicie o `pnpm dev`**: o singleton do PrismaClient (`src/db.ts`) sobrevive ao HMR de propósito (evita esgotar conexões) e fica com o client ANTIGO — colunas novas dão `Unknown argument` até reiniciar o processo.
 - Nunca prefixar segredos com `VITE_` (vão para o bundle client). A claim URL é a única exceção intencional do plugin (dev-only).
 - Schema: `Person` (dedupe por `slug` único) → `Phrase` (FK `personId`) → `Utterance` (cada "+1" é um evento com `saidAt`). **Não existe coluna de contador**: total e mensal são `COUNT` com filtro de data — qualquer recorte futuro (semana, ano) sai sem migração. Manter `db/init.sql` em sincronia com `prisma/schema.prisma` (o init.sql roda só no provisionamento; o push reconcilia).
 - Fuso do corte mensal: America/Recife (UTC-3 fixo, sem horário de verão) — helpers em `src/lib/month.ts`. `saidAt` é gravado em UTC; a conversão acontece na comparação/formatação.
@@ -69,6 +70,7 @@ descontinuado). Prisma engines/esbuild já estão aprovados lá.
 - **Ids temporários**: inserts otimistas usam id negativo (`nextTempId()`); cards com `id < 0` têm o "+1" desabilitado até o refetch trazer o id real.
 - **/ranking**: TanStack Query puro (`useQuery` + `ensureQueryData` no loader, SSR ativo) + TanStack Table. Período via **search param** (`?periodo=YYYY-MM|total`, `validateSearch` com zod + `.catch` para URL inválida não quebrar; ausente = mês corrente). Agregações via `$queryRaw` (COUNT com `FILTER`/faixa de datas; `::int` nos COUNTs — sem cast o pg devolve BigInt e a serialização quebra).
 - **/pessoas**: listagem via `peopleQueryOptions` compartilhada (`src/lib/people-query.ts`) com o combobox do formulário (datalist nativo — sem lib de combobox).
+- **Home extra** (`src/lib/home-queries.ts`): feed "Rolando agora" (`getFeed`, últimas 8 utterances; `isFirst` distingue registro de repetição) e **pérola do dia** (`getDailyPearl`, sorteio determinístico por `md5(dia-de-Recife || id)` priorizando frases sem utterance há 7+ dias — todo mundo vê a mesma o dia inteiro). `Phrase.context` é a historinha opcional. A invalidação pós-escrita da coleção cobre `['feed']` também.
 - **Hotkeys**: `useHotkey`/`useHotkeySequence` direto (o manager é singleton; `HotkeysProvider` é opcional e não foi usado). `Mod+K` foca o form, `Mod+Enter` submete, sequências `g h`/`g r` navegam. Teclas simples ignoram inputs por padrão.
 - **Erros de rede**: banner com "Tentar de novo" para falha de leitura; toast (`src/lib/toast.ts`, store com `useSyncExternalStore`, sem lib externa) para falha de escrita; `defaultErrorComponent`/`defaultNotFoundComponent` no router. Nada pode estourar tela branca.
 - **Tema**: dark mode só via `prefers-color-scheme` (o ThemeToggle do scaffold foi removido porque usava localStorage, proibido neste projeto).
@@ -82,5 +84,6 @@ descontinuado). Prisma engines/esbuild já estão aprovados lá.
 
 ## Próximos passos possíveis
 
-- Normalizar autores (hoje o agrupamento é por string exata, com trim + colapso de espaços no create).
-- Excluir/editar pérolas; paginação se o acervo crescer.
+- Excluir/editar pérolas (typos hoje são eternos); mesclar pessoas quando o slug não pegar (apelido vs nome).
+- Retrospectiva mensal, conquistas/badges, streaks — o ledger de utterances já suporta tudo.
+- Card compartilhável (imagem OG por pérola); atualização ao vivo entre máquinas (refetchInterval ou SSE).
