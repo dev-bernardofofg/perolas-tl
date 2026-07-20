@@ -74,7 +74,9 @@ descontinuado). Prisma engines/esbuild já estão aprovados lá.
 
 ## Deploy
 
-- `pnpm build` (plugin Neon é inerte em produção) → precisa de `DATABASE_URL` real no ambiente de deploy (copiar do `.env.local` ou do console Neon).
+- O plugin `nitro()` no `vite.config.ts` empacota o servidor por alvo: na Vercel (CI detectado) emite `.vercel/output` (Build Output API, serverless function); localmente emite `.output` (node-server). Sem ele, o deploy na Vercel publica só o `dist/` e todas as rotas dão 404.
+- `pnpm build` roda `prisma generate` antes do Vite (o client gerado é gitignored) e o plugin Neon é inerte em produção.
+- O ambiente de deploy precisa de `DATABASE_URL` real (a pooled do `.env.local` ou do console Neon) — o build passa sem ela, o runtime não.
 
 ## Próximos passos possíveis
 
