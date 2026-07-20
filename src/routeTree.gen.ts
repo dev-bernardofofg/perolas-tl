@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PessoasRouteImport } from './routes/pessoas'
 import { Route as RankingRouteImport } from './routes/ranking'
+import { Route as ApiEventsRouteImport } from './routes/api/events'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const RankingRoute = RankingRouteImport.update({
   path: '/ranking',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiEventsRoute = ApiEventsRouteImport.update({
+  id: '/api/events',
+  path: '/api/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/pessoas': typeof PessoasRoute
   '/ranking': typeof RankingRoute
+  '/api/events': typeof ApiEventsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pessoas': typeof PessoasRoute
   '/ranking': typeof RankingRoute
+  '/api/events': typeof ApiEventsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/pessoas': typeof PessoasRoute
   '/ranking': typeof RankingRoute
+  '/api/events': typeof ApiEventsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/pessoas' | '/ranking'
+  fullPaths: '/' | '/pessoas' | '/ranking' | '/api/events'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/pessoas' | '/ranking'
-  id: '__root__' | '/' | '/pessoas' | '/ranking'
+  to: '/' | '/pessoas' | '/ranking' | '/api/events'
+  id: '__root__' | '/' | '/pessoas' | '/ranking' | '/api/events'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PessoasRoute: typeof PessoasRoute
   RankingRoute: typeof RankingRoute
+  ApiEventsRoute: typeof ApiEventsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RankingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/events': {
+      id: '/api/events'
+      path: '/api/events'
+      fullPath: '/api/events'
+      preLoaderRoute: typeof ApiEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PessoasRoute: PessoasRoute,
   RankingRoute: RankingRoute,
+  ApiEventsRoute: ApiEventsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

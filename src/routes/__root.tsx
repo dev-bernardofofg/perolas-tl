@@ -8,6 +8,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
 import ErrorToast from '../components/ErrorToast'
+import LiveUpdates from '../components/LiveUpdates'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
@@ -59,6 +60,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         {children}
         <Footer />
         <ErrorToast />
+        <LiveUpdates />
         <TanStackDevtools
           config={{
             position: 'bottom-right',
