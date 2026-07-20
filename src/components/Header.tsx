@@ -39,6 +39,13 @@ export default function Header() {
           >
             👥 Pessoas
           </Link>
+          <Link
+            to="/retro"
+            className="nav-link"
+            activeProps={{ className: 'nav-link is-active' }}
+          >
+            ✨ Retrô
+          </Link>
         </div>
       </nav>
     </header>

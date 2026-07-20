@@ -25,6 +25,13 @@ export function currentDay(): string {
   }).format(new Date())
 }
 
+export function previousPeriod(period: string = currentPeriod()): string {
+  const [year, month] = period.split('-').map(Number)
+  return month === 1
+    ? `${year - 1}-12`
+    : `${year}-${String(month - 1).padStart(2, '0')}`
+}
+
 export function monthRange(period: string): { start: Date; end: Date } {
   const [year, month] = period.split('-').map(Number)
   const next =
