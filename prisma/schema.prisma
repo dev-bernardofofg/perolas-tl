@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Phrase {
+  id        Int      @id @default(autoincrement())
+  text      String
+  author    String
+  count     Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@index([count(sort: Desc)], map: "phrases_count_idx")
+  @@map("phrases")
+}
