@@ -1,8 +1,11 @@
 # 💬 Pérolas do Escritório
 
 Contador de frases icônicas ditas pelas pessoas do escritório. Registre a
-pérola, aponte o autor e vá somando `+1` toda vez que ela for dita de novo —
-com ranking das frases mais faladas e dos maiores faladores.
+pérola, aponte o autor (pessoas são registradas e deduplicadas — "Rafael lins"
+e "Rafael Lins" viram uma só) e vá somando `+1` toda vez que ela for dita de
+novo. Cada `+1` é um evento com data, então os cards mostram "X este mês · Y
+no total" e o ranking existe nas visões **mensal** (com navegação entre meses
+via `?periodo=YYYY-MM`) e **total**. A página `/pessoas` lista o elenco.
 
 ## Stack
 
