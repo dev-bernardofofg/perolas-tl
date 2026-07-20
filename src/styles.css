@@ -1,0 +1,685 @@
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Paleta zoeira de escritório ─────────────────────────────────────────── */
+:root {
+  --ink: #33254d;
+  --ink-soft: #6d5f8a;
+  --coral: #ff6b6b;
+  --coral-deep: #e5484d;
+  --sunshine: #ffc53d;
+  --grape: #7c5cff;
+  --mint: #12b886;
+  --bg-base: #fdf6ec;
+  --card: #ffffff;
+  --card-soft: #fffdf8;
+  --line: rgba(51, 37, 77, 0.12);
+  --header-bg: rgba(255, 251, 243, 0.88);
+  --shadow-soft: 0 10px 30px rgba(124, 92, 255, 0.1), 0 3px 10px rgba(51, 37, 77, 0.07);
+  --danger-bg: rgba(229, 72, 77, 0.09);
+  --danger-line: rgba(229, 72, 77, 0.32);
+  --danger-ink: #c03538;
+  --podium-gold: rgba(255, 197, 61, 0.2);
+  --podium-silver: rgba(148, 163, 184, 0.18);
+  --podium-bronze: rgba(217, 119, 66, 0.16);
+  --hero-a: rgba(255, 107, 107, 0.16);
+  --hero-b: rgba(124, 92, 255, 0.14);
+  --hero-c: rgba(255, 197, 61, 0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #efe9ff;
+    --ink-soft: #b3a6d6;
+    --coral: #ff8787;
+    --coral-deep: #ff6b6b;
+    --sunshine: #ffd43b;
+    --grape: #9d84ff;
+    --mint: #38d9a9;
+    --bg-base: #17112a;
+    --card: #241b3e;
+    --card-soft: #2b2149;
+    --line: rgba(239, 233, 255, 0.14);
+    --header-bg: rgba(23, 17, 42, 0.88);
+    --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.35), 0 3px 10px rgba(0, 0, 0, 0.25);
+    --danger-bg: rgba(255, 107, 107, 0.12);
+    --danger-line: rgba(255, 107, 107, 0.38);
+    --danger-ink: #ffa8a8;
+    --podium-gold: rgba(255, 212, 59, 0.14);
+    --podium-silver: rgba(148, 163, 184, 0.14);
+    --podium-bronze: rgba(217, 119, 66, 0.14);
+    --hero-a: rgba(255, 107, 107, 0.1);
+    --hero-b: rgba(124, 92, 255, 0.12);
+    --hero-c: rgba(255, 197, 61, 0.08);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  background-color: var(--bg-base);
+  background:
+    radial-gradient(900px 520px at -10% -10%, var(--hero-a), transparent 60%),
+    radial-gradient(880px 540px at 110% -8%, var(--hero-b), transparent 62%),
+    radial-gradient(680px 400px at 50% 115%, var(--hero-c), transparent 66%),
+    var(--bg-base);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--grape);
+  text-underline-offset: 2px;
+}
+
+kbd {
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--card);
+  padding: 1px 6px;
+  font-size: 0.78em;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.page-wrap {
+  width: min(880px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.page-main {
+  padding-block: 2rem 3.5rem;
+}
+
+/* ── Header fixo ─────────────────────────────────────────────────────────── */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 2px solid var(--line);
+  background: var(--header-bg);
+  backdrop-filter: blur(10px);
+}
+
+.header-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding-block: 0.8rem;
+}
+
+.brand {
+  font-family: "Baloo 2", var(--font-sans);
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.header-links {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.nav-link {
+  position: relative;
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: 0.35rem 0.2rem;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  border-radius: 3px;
+  transform: scaleX(0);
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--coral), var(--sunshine));
+  transition: transform 170ms ease;
+}
+
+.nav-link:hover,
+.nav-link.is-active {
+  color: var(--ink);
+}
+
+.nav-link:hover::after,
+.nav-link.is-active::after {
+  transform: scaleX(1);
+}
+
+/* ── Títulos ─────────────────────────────────────────────────────────────── */
+.page-title {
+  margin: 0 0 0.35rem;
+  font-family: "Baloo 2", var(--font-sans);
+  font-size: clamp(1.9rem, 5vw, 2.8rem);
+  font-weight: 800;
+  line-height: 1.08;
+}
+
+.page-subtitle {
+  margin: 0 0 1.8rem;
+  color: var(--ink-soft);
+  font-size: 1.02rem;
+}
+
+.section-title {
+  margin: 0 0 0.9rem;
+  font-family: "Baloo 2", var(--font-sans);
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.panel-title {
+  margin: 0 0 1rem;
+  font-family: "Baloo 2", var(--font-sans);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+/* ── Formulário ──────────────────────────────────────────────────────────── */
+.pearl-panel {
+  border: 2px solid var(--line);
+  border-radius: 1.4rem;
+  background: linear-gradient(160deg, var(--card), var(--card-soft));
+  box-shadow: var(--shadow-soft);
+  padding: clamp(1.1rem, 3.5vw, 1.7rem);
+  margin-bottom: 2.2rem;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.field-label {
+  font-weight: 800;
+  font-size: 0.92rem;
+}
+
+.field-input {
+  width: 100%;
+  border: 2px solid var(--line);
+  border-radius: 0.85rem;
+  background: var(--card);
+  color: var(--ink);
+  padding: 0.7rem 0.9rem;
+  font-family: inherit;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.field-textarea {
+  resize: vertical;
+  min-height: 5.5rem;
+}
+
+.field-input:focus {
+  border-color: var(--grape);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--grape) 22%, transparent);
+}
+
+.field-input[aria-invalid='true'] {
+  border-color: var(--danger-line);
+}
+
+.field-error {
+  color: var(--danger-ink);
+  font-size: 0.85rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--coral), var(--coral-deep));
+  color: #fff;
+  padding: 0.8rem 1.6rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(229, 72, 77, 0.28);
+  transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(229, 72, 77, 0.34);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  padding: 0.55rem 1.2rem;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 150ms ease, border-color 150ms ease;
+}
+
+.btn-secondary:hover {
+  transform: translateY(-1px);
+  border-color: var(--grape);
+}
+
+/* ── Cards de pérolas ────────────────────────────────────────────────────── */
+.pearl-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.pearl-card {
+  border: 2px solid var(--line);
+  border-radius: 1.25rem;
+  background: linear-gradient(160deg, var(--card), var(--card-soft));
+  box-shadow: var(--shadow-soft);
+  padding: 1.15rem 1.25rem;
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+
+.pearl-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--grape) 40%, var(--line));
+}
+
+.pearl-quote {
+  margin: 0 0 0.9rem;
+  font-size: 1.12rem;
+  font-weight: 700;
+  line-height: 1.45;
+  quotes: none;
+}
+
+.pearl-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.pearl-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.pearl-author {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.pearl-date {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.pearl-counter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.pearl-count-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+.pearl-count {
+  display: inline-block;
+  font-family: "Baloo 2", var(--font-sans);
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--grape);
+}
+
+.pearl-count-label {
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.btn-plus {
+  border: none;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, var(--sunshine), #ffa94d);
+  color: #4a3200;
+  font-family: "Baloo 2", var(--font-sans);
+  font-size: 1.35rem;
+  font-weight: 800;
+  padding: 0.55rem 1.15rem;
+  min-width: 4.25rem;
+  min-height: 3rem;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(255, 169, 77, 0.35);
+  transition: transform 130ms ease, box-shadow 130ms ease, opacity 130ms ease;
+}
+
+.btn-plus:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 10px 22px rgba(255, 169, 77, 0.45);
+}
+
+.btn-plus:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.btn-plus:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+/* "-1" discreto: desfaz clique acidental sem competir com o +1 */
+.btn-minus {
+  border: 2px solid var(--line);
+  border-radius: 1rem;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: "Baloo 2", var(--font-sans);
+  font-size: 1rem;
+  font-weight: 800;
+  padding: 0.55rem 0.8rem;
+  min-height: 3rem;
+  cursor: pointer;
+  transition: transform 130ms ease, border-color 130ms ease, color 130ms ease,
+    opacity 130ms ease;
+}
+
+.btn-minus:hover:not(:disabled) {
+  border-color: var(--coral-deep);
+  color: var(--coral-deep);
+  transform: translateY(-1px);
+}
+
+.btn-minus:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.btn-minus:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Animação do contador: o span é remontado com key={count} a cada +1 */
+.pop {
+  animation: pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.45) rotate(-4deg);
+    color: var(--coral);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ── Estados vazios / loading / erro ─────────────────────────────────────── */
+.empty-state {
+  border: 2px dashed var(--line);
+  border-radius: 1.4rem;
+  padding: 2.6rem 1.5rem;
+  text-align: center;
+}
+
+.empty-emoji {
+  display: block;
+  font-size: 2.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.empty-title {
+  margin: 0;
+  font-family: "Baloo 2", var(--font-sans);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.empty-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--ink-soft);
+}
+
+.loading-note {
+  color: var(--ink-soft);
+  font-weight: 700;
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.error-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  border: 2px solid var(--danger-line);
+  border-radius: 1.1rem;
+  background: var(--danger-bg);
+  color: var(--danger-ink);
+  font-weight: 700;
+  padding: 1rem 1.2rem;
+}
+
+.error-banner p {
+  margin: 0;
+}
+
+/* ── Toasts ──────────────────────────────────────────────────────────────── */
+.toast-region {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(26rem, calc(100vw - 2rem));
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 2px solid var(--danger-line);
+  border-radius: 1rem;
+  background: var(--card);
+  color: var(--danger-ink);
+  font-weight: 700;
+  font-size: 0.92rem;
+  padding: 0.8rem 1rem;
+  box-shadow: var(--shadow-soft);
+  animation: toast-in 260ms cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+.toast-close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.5rem;
+}
+
+.toast-close:hover {
+  background: var(--danger-bg);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Ranking ─────────────────────────────────────────────────────────────── */
+.ranking-section {
+  margin-bottom: 2.4rem;
+}
+
+.table-shell {
+  overflow-x: auto;
+  border: 2px solid var(--line);
+  border-radius: 1.2rem;
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+}
+
+.ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.ranking-table th,
+.ranking-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 0.8rem 1rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.ranking-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ranking-table th {
+  font-family: "Baloo 2", var(--font-sans);
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+
+.position-cell {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.table-quote {
+  font-weight: 600;
+}
+
+.table-count {
+  font-family: "Baloo 2", var(--font-sans);
+  font-size: 1.05rem;
+  color: var(--grape);
+}
+
+.podium-1 {
+  background: var(--podium-gold);
+}
+
+.podium-2 {
+  background: var(--podium-silver);
+}
+
+.podium-3 {
+  background: var(--podium-bronze);
+}
+
+.podium .position-cell {
+  font-size: 1.05rem;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.site-footer {
+  border-top: 2px solid var(--line);
+  background: var(--header-bg);
+  padding: 1.4rem 1rem 1.8rem;
+  margin-top: 2rem;
+}
+
+.footer-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.footer-inner p {
+  margin: 0;
+}
+
+.footer-hotkeys {
+  font-weight: 600;
+}
+
+/* ── Acessibilidade ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .pop,
+  .toast {
+    animation: none;
+  }
+
+  .pearl-card,
+  .btn-primary,
+  .btn-plus,
+  .btn-minus,
+  .btn-secondary {
+    transition: none;
+  }
+}
