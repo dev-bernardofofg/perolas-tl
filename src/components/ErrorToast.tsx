@@ -6,7 +6,11 @@ export default function ErrorToast() {
   return (
     <div className="toast-region" aria-live="assertive" aria-label="Avisos de erro">
       {toasts.map((toast) => (
-        <div key={toast.id} className="toast" role="alert">
+        <div
+          key={toast.id}
+          className={`toast ${toast.kind === 'success' ? 'toast-success' : ''}`}
+          role="alert"
+        >
           <span>{toast.message}</span>
           <button
             type="button"

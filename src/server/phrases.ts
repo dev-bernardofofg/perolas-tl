@@ -68,6 +68,24 @@ export const listPhrases = createServerFn({ method: 'GET' }).handler(async () =>
   return rows
 })
 
+export const getPhraseById = createServerFn({ method: 'GET' })
+  .validator(z.object({ id: z.number().int().positive('Id inválido') }))
+  .handler(async ({ data }) => {
+    const { start, end } = monthRange(currentPeriod())
+    const rows = await prisma.$queryRaw<Array<PhraseListRow>>`
+      SELECT ph.id, ph.text, ph.context, ph."personId", ph."createdAt",
+             pe.name AS "personName",
+             COUNT(u.id)::int AS "totalCount",
+             (COUNT(u.id) FILTER (WHERE u."saidAt" >= ${start} AND u."saidAt" < ${end}))::int AS "monthCount"
+      FROM "phrases" ph
+      JOIN "people" pe ON pe.id = ph."personId"
+      LEFT JOIN "utterances" u ON u."phraseId" = ph.id
+      WHERE ph.id = ${data.id}
+      GROUP BY ph.id, pe.name
+    `
+    return rows[0] ?? null
+  })
+
 export const createPhrase = createServerFn({ method: 'POST' })
   .validator(CreatePhraseSchema)
   .handler(async ({ data }) => {
@@ -92,6 +110,38 @@ export const createPhrase = createServerFn({ method: 'POST' })
         utterances: { create: {} },
       },
     })
+  })
+
+const UpdatePhraseSchema = z.object({
+  id: z.number().int().positive('Id inválido'),
+  text: z
+    .string()
+    .trim()
+    .min(1, 'A frase não pode ficar em branco')
+    .max(500, 'Calma, isso já virou um discurso — máximo de 500 caracteres'),
+  // null explícito limpa o contexto (diferente do create, onde undefined = omitido)
+  context: z
+    .string()
+    .trim()
+    .max(500, 'A historinha passou do limite — máximo de 500 caracteres')
+    .nullable(),
+})
+
+export const updatePhrase = createServerFn({ method: 'POST' })
+  .validator(UpdatePhraseSchema)
+  .handler(({ data }) =>
+    prisma.phrase.update({
+      where: { id: data.id },
+      data: { text: data.text, context: data.context || null },
+    }),
+  )
+
+export const deletePhrase = createServerFn({ method: 'POST' })
+  .validator(z.object({ id: z.number().int().positive('Id inválido') }))
+  .handler(async ({ data }) => {
+    // utterances caem em cascata (onDelete: Cascade no schema)
+    await prisma.phrase.delete({ where: { id: data.id } })
+    return { deleted: true }
   })
 
 export type FeedEntry = {

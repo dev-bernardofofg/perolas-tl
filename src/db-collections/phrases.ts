@@ -3,9 +3,11 @@ import { queryCollectionOptions } from '@tanstack/query-db-collection'
 import { getQueryClient } from '#/integrations/tanstack-query/root-provider'
 import {
   createPhrase,
+  deletePhrase,
   listPhrases,
   registerUtterance,
   undoUtterance,
+  updatePhrase,
 } from '#/server/phrases'
 
 export type Phrase = Awaited<ReturnType<typeof listPhrases>>[number]
@@ -65,10 +67,34 @@ export const phrasesCollection = createCollection(
           data: { phraseId: original.id, times: -delta },
         })
       }
+      // edição de texto/contexto (pode vir junto ou separada do delta)
+      if (
+        modified.text !== original.text ||
+        modified.context !== original.context
+      ) {
+        await updatePhrase({
+          data: {
+            id: original.id,
+            text: modified.text,
+            context: modified.context,
+          },
+        })
+      }
+      invalidateDerivedQueries()
+    },
+    onDelete: async ({ transaction }) => {
+      const { original } = transaction.mutations[0]
+      await deletePhrase({ data: { id: original.id } })
       invalidateDerivedQueries()
     },
   }),
 )
+
+// Para ações fora da coleção (ex.: mesclar pessoas) que mudam dados de pérolas.
+export function refreshAllData() {
+  void phrasesCollection.utils.refetch().catch(() => {})
+  invalidateDerivedQueries()
+}
 
 let tempId = 0
 

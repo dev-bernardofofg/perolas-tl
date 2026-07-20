@@ -1,11 +1,15 @@
+import { useState } from 'react'
 import { phrasesCollection } from '#/db-collections/phrases'
-import { showErrorToast } from '#/lib/toast'
+import { showErrorToast, showSuccessToast } from '#/lib/toast'
 import type { Phrase } from '#/db-collections/phrases'
 
 export default function PhraseCard({ phrase }: { phrase: Phrase }) {
   // Cards recém-inseridos ainda não confirmados pelo servidor têm id temporário
-  // negativo — +1/−1 ficam travados até o id real do banco chegar.
+  // negativo — ações ficam travadas até o id real do banco chegar.
   const isPending = phrase.id < 0
+  const [isEditing, setIsEditing] = useState(false)
+  const [editText, setEditText] = useState('')
+  const [editContext, setEditContext] = useState('')
 
   const handlePlusOne = () => {
     const tx = phrasesCollection.update(phrase.id, (draft) => {
@@ -30,10 +34,127 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
     })
   }
 
+  const startEditing = () => {
+    setEditText(phrase.text)
+    setEditContext(phrase.context ?? '')
+    setIsEditing(true)
+  }
+
+  const saveEdit = () => {
+    const text = editText.trim()
+    if (!text) return
+    const context = editContext.trim() || null
+    setIsEditing(false)
+    if (text === phrase.text && context === phrase.context) return
+    const tx = phrasesCollection.update(phrase.id, (draft) => {
+      draft.text = text
+      draft.context = context
+    })
+    tx.isPersisted.promise.catch(() => {
+      showErrorToast('Ops! Não conseguimos salvar a edição. Tenta de novo 🙈')
+    })
+  }
+
+  const handleDelete = () => {
+    const ok = window.confirm(
+      `Apagar a pérola "${phrase.text}" e todo o histórico dela? Essa não tem -1.`,
+    )
+    if (!ok) return
+    const tx = phrasesCollection.delete(phrase.id)
+    tx.isPersisted.promise.catch(() => {
+      showErrorToast('Ops! Não conseguimos apagar a pérola. Tenta de novo 🙈')
+    })
+  }
+
   return (
     <article className="pearl-card">
-      <blockquote className="pearl-quote">“{phrase.text}”</blockquote>
-      {phrase.context && <p className="pearl-context">{phrase.context}</p>}
+      <div className="card-actions">
+        <button
+          type="button"
+          className="btn-icon"
+          onClick={() => {
+            navigator.clipboard
+              .writeText(`${window.location.origin}/p/${phrase.id}`)
+              .then(() => showSuccessToast('Link copiado! Cola no grupo 📤'))
+              .catch(() =>
+                showErrorToast('Não deu para copiar o link. Tenta de novo 🙈'),
+              )
+          }}
+          disabled={isPending}
+          aria-label={`Copiar link da pérola de ${phrase.personName}`}
+          title="Copiar link compartilhável"
+        >
+          📤
+        </button>
+        <button
+          type="button"
+          className="btn-icon"
+          onClick={startEditing}
+          disabled={isPending || isEditing}
+          aria-label={`Editar a pérola de ${phrase.personName}`}
+          title="Corrigir typo / editar historinha"
+        >
+          ✏️
+        </button>
+        <button
+          type="button"
+          className="btn-icon"
+          onClick={handleDelete}
+          disabled={isPending}
+          aria-label={`Apagar a pérola de ${phrase.personName}`}
+          title="Apagar pérola (e histórico)"
+        >
+          🗑️
+        </button>
+      </div>
+
+      {isEditing ? (
+        <div className="edit-fields">
+          <label className="field-label" htmlFor={`edit-text-${phrase.id}`}>
+            Frase
+          </label>
+          <textarea
+            id={`edit-text-${phrase.id}`}
+            className="field-input field-textarea field-textarea-short"
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            rows={2}
+          />
+          <label className="field-label" htmlFor={`edit-ctx-${phrase.id}`}>
+            Como foi <span className="field-optional">(opcional)</span>
+          </label>
+          <textarea
+            id={`edit-ctx-${phrase.id}`}
+            className="field-input field-textarea field-textarea-short"
+            value={editContext}
+            onChange={(e) => setEditContext(e.target.value)}
+            rows={2}
+          />
+          <div className="edit-actions">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setIsEditing(false)}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={saveEdit}
+              disabled={!editText.trim()}
+            >
+              Salvar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <blockquote className="pearl-quote">“{phrase.text}”</blockquote>
+          {phrase.context && <p className="pearl-context">{phrase.context}</p>}
+        </>
+      )}
+
       <div className="pearl-card-footer">
         <div className="pearl-meta">
           <span className="pearl-author">🗣️ {phrase.personName}</span>

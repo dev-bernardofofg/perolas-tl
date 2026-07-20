@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { peopleQueryOptions } from '#/lib/people-query'
 import PeopleTable from '#/components/PeopleTable'
+import MergePeoplePanel from '#/components/MergePeoplePanel'
 
 export const Route = createFileRoute('/pessoas')({
   loader: async ({ context }) => {
@@ -66,7 +67,10 @@ function PeoplePage() {
           </p>
         </div>
       ) : (
-        <PeopleTable data={data} />
+        <>
+          <PeopleTable data={data} />
+          <MergePeoplePanel people={data} />
+        </>
       )}
     </main>
   )
