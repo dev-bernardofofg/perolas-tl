@@ -72,6 +72,7 @@ descontinuado). Prisma engines/esbuild já estão aprovados lá.
 - **/pessoas**: listagem via `peopleQueryOptions` compartilhada (`src/lib/people-query.ts`) com o combobox do formulário (datalist nativo — sem lib de combobox).
 - **Home extra** (`src/lib/home-queries.ts`): feed "Rolando agora" (`getFeed`, últimas 8 utterances; `isFirst` distingue registro de repetição) e **pérola do dia** (`getDailyPearl`, sorteio determinístico por `md5(dia-de-Recife || id)` priorizando frases sem utterance há 7+ dias — todo mundo vê a mesma o dia inteiro). `Phrase.context` é a historinha opcional. A invalidação pós-escrita da coleção cobre `['feed']` também.
 - **Hotkeys**: `useHotkey`/`useHotkeySequence` direto (o manager é singleton; `HotkeysProvider` é opcional e não foi usado). `Mod+K` foca o form, `Mod+Enter` submete, sequências `g h`/`g r` navegam. Teclas simples ignoram inputs por padrão.
+- **Tempo real (SSE)**: `src/routes/api/events.ts` é uma server route que faz poll de uma tupla de versão no banco (max/count de utterances e phrases) a cada 4s e empurra a versão via `text/event-stream`. `LiveUpdates` (montado no `__root`) abre um `EventSource` e, quando a versão muda, refaz a coleção + invalida feed/ranking/pessoas — a primeira versão pós-(re)conexão é só linha de base, não dispara refetch. A conexão se auto-encerra em 4min (abaixo do maxDuration de function na Vercel) e o `EventSource` reconecta nativamente (`retry: 3000`). Custo: uma function fica viva por aba aberta — ok para escala de escritório; se crescer, migrar para Electric SQL (exige replicação lógica no Neon, hoje desligada).
 - **Erros de rede**: banner com "Tentar de novo" para falha de leitura; toast (`src/lib/toast.ts`, store com `useSyncExternalStore`, sem lib externa) para falha de escrita; `defaultErrorComponent`/`defaultNotFoundComponent` no router. Nada pode estourar tela branca.
 - **Tema**: dark mode só via `prefers-color-scheme` (o ThemeToggle do scaffold foi removido porque usava localStorage, proibido neste projeto).
 - **Devtools**: `consolePiping` desabilitado no `vite.config.ts` — o eco client↔server de console entra em loop de feedback quando um warning do React (ex.: hydration) aparece, inundando o terminal com GB de log.
@@ -86,4 +87,4 @@ descontinuado). Prisma engines/esbuild já estão aprovados lá.
 
 - Excluir/editar pérolas (typos hoje são eternos); mesclar pessoas quando o slug não pegar (apelido vs nome).
 - Retrospectiva mensal, conquistas/badges, streaks — o ledger de utterances já suporta tudo.
-- Card compartilhável (imagem OG por pérola); atualização ao vivo entre máquinas (refetchInterval ou SSE).
+- Card compartilhável (imagem OG por pérola).

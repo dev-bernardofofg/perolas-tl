@@ -10,7 +10,8 @@ via `?periodo=YYYY-MM`) e **total**. A página `/pessoas` lista o elenco.
 Na home ainda tem: **pérola do dia** (sorteio determinístico que resgata
 frases esquecidas), o feed **"Rolando agora"** com os últimos acontecimentos,
 e o campo opcional **"Como foi"** para registrar a historinha por trás da
-frase.
+frase. Tudo atualiza **ao vivo entre máquinas** via SSE (`/api/events`): o
++1 dado na mesa ao lado aparece na sua tela em segundos, sem recarregar.
 
 ## Stack
 
