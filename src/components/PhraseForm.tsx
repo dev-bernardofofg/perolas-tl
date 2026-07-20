@@ -1,7 +1,10 @@
 import { useRef } from 'react'
 import { useForm } from '@tanstack/react-form'
+import { useQuery } from '@tanstack/react-query'
 import { useHotkey } from '@tanstack/react-hotkeys'
 import { nextTempId, phrasesCollection } from '#/db-collections/phrases'
+import { peopleQueryOptions } from '#/lib/people-query'
+import { normalizeName, slugifyName } from '#/lib/normalize'
 import { showErrorToast } from '#/lib/toast'
 
 function validateText(value: string) {
@@ -14,18 +17,28 @@ function validateAuthor(value: string) {
 
 export default function PhraseForm() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { data: people } = useQuery(peopleQueryOptions)
 
   const form = useForm({
-    defaultValues: { text: '', author: '' },
+    defaultValues: { text: '', personName: '' },
     onSubmit: async ({ value }) => {
+      const typedName = normalizeName(value.personName)
+      // pessoa já registrada? match por slug — "rafael lins" acha "Rafael Lins"
+      const existing = people?.find(
+        (p) => slugifyName(p.name) === slugifyName(typedName),
+      )
+
       const tx = phrasesCollection.insert({
         id: nextTempId(),
         text: value.text.trim(),
-        author: value.author.trim().replace(/\s+/g, ' '),
-        count: 1,
+        personId: existing?.id ?? -1,
+        personName: existing?.name ?? typedName,
+        monthCount: 1,
+        totalCount: 1,
         createdAt: new Date(),
       })
       try {
+        // a invalidação de /pessoas e /ranking acontece no onInsert da coleção
         await tx.isPersisted.promise
         form.reset()
         textareaRef.current?.focus()
@@ -82,7 +95,7 @@ export default function PhraseForm() {
         </form.Field>
 
         <form.Field
-          name="author"
+          name="personName"
           validators={{ onChange: ({ value }) => validateAuthor(value) }}
         >
           {(field) => (
@@ -94,13 +107,20 @@ export default function PhraseForm() {
                 id={field.name}
                 name={field.name}
                 type="text"
+                list="pessoas-registradas"
                 className="field-input"
-                placeholder="Carlos do Comercial"
+                placeholder="Escolha alguém ou digite um nome novo"
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
                 aria-invalid={field.state.meta.errors.length > 0}
+                autoComplete="off"
               />
+              <datalist id="pessoas-registradas">
+                {people?.map((p) => (
+                  <option key={p.id} value={p.name} />
+                ))}
+              </datalist>
               {field.state.meta.errors.length > 0 && (
                 <em role="alert" className="field-error">
                   {field.state.meta.errors[0]}

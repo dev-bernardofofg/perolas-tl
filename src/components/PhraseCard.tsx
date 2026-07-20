@@ -4,12 +4,13 @@ import type { Phrase } from '#/db-collections/phrases'
 
 export default function PhraseCard({ phrase }: { phrase: Phrase }) {
   // Cards recém-inseridos ainda não confirmados pelo servidor têm id temporário
-  // negativo — o "+1" fica travado até o id real do banco chegar.
+  // negativo — +1/−1 ficam travados até o id real do banco chegar.
   const isPending = phrase.id < 0
 
   const handlePlusOne = () => {
     const tx = phrasesCollection.update(phrase.id, (draft) => {
-      draft.count += 1
+      draft.monthCount += 1
+      draft.totalCount += 1
     })
     tx.isPersisted.promise.catch(() => {
       showErrorToast('Ops! Não conseguimos salvar o +1. Tenta de novo 🙈')
@@ -17,9 +18,12 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
   }
 
   const handleMinusOne = () => {
-    if (phrase.count <= 1) return
+    if (phrase.totalCount <= 1) return
     const tx = phrasesCollection.update(phrase.id, (draft) => {
-      draft.count -= 1
+      // o -1 remove a utterance mais recente; se ela for deste mês, o contador
+      // mensal desce junto (otimista — o refetch reconcilia o valor exato)
+      if (draft.monthCount > 0) draft.monthCount -= 1
+      draft.totalCount -= 1
     })
     tx.isPersisted.promise.catch(() => {
       showErrorToast('Ops! Não conseguimos desfazer o +1. Tenta de novo 🙈')
@@ -31,7 +35,7 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
       <blockquote className="pearl-quote">“{phrase.text}”</blockquote>
       <div className="pearl-card-footer">
         <div className="pearl-meta">
-          <span className="pearl-author">🗣️ {phrase.author}</span>
+          <span className="pearl-author">🗣️ {phrase.personName}</span>
           <time
             className="pearl-date"
             dateTime={new Date(phrase.createdAt).toISOString()}
@@ -40,20 +44,22 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
           </time>
         </div>
         <div className="pearl-counter-group">
-          <span className="pearl-count-wrap" aria-label={`Dita ${phrase.count} vezes`}>
-            <span key={phrase.count} className="pearl-count pop">
-              {phrase.count}
+          <span
+            className="pearl-count-wrap"
+            aria-label={`Dita ${phrase.monthCount} vezes este mês e ${phrase.totalCount} no total`}
+          >
+            <span key={phrase.monthCount} className="pearl-count pop">
+              {phrase.monthCount}
             </span>
-            <span className="pearl-count-label">
-              {phrase.count === 1 ? 'vez' : 'vezes'}
-            </span>
+            <span className="pearl-count-label">este mês</span>
+            <span className="pearl-total">{phrase.totalCount} no total</span>
           </span>
           <button
             type="button"
             className="btn-minus"
             onClick={handleMinusOne}
-            disabled={isPending || phrase.count <= 1}
-            aria-label={`Desfazer um +1 da pérola de ${phrase.author}`}
+            disabled={isPending || phrase.totalCount <= 1}
+            aria-label={`Desfazer um +1 da pérola de ${phrase.personName}`}
             title="Foi sem querer (desfaz um +1)"
           >
             −1
@@ -63,7 +69,7 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
             className="btn-plus"
             onClick={handlePlusOne}
             disabled={isPending}
-            aria-label={`Disse de novo: somar 1 à pérola de ${phrase.author}`}
+            aria-label={`Disse de novo: somar 1 à pérola de ${phrase.personName}`}
             title="Disse de novo!"
           >
             +1

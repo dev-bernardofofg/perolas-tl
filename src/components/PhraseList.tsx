@@ -37,9 +37,11 @@ export default function PhraseList() {
     )
   }
 
+  // o que está quente primeiro: mês corrente, depois total, depois antiguidade
   const phrases = [...(data ?? [])].sort(
     (a, b) =>
-      b.count - a.count ||
+      b.monthCount - a.monthCount ||
+      b.totalCount - a.totalCount ||
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   )
 
