@@ -7,13 +7,36 @@ datasource db {
   provider = "postgresql"
 }
 
-model Phrase {
+model Person {
   id        Int      @id @default(autoincrement())
-  text      String
-  author    String
-  count     Int      @default(1)
+  name      String
+  slug      String   @unique
+  phrases   Phrase[]
   createdAt DateTime @default(now())
 
-  @@index([count(sort: Desc)], map: "phrases_count_idx")
+  @@map("people")
+}
+
+model Phrase {
+  id         Int         @id @default(autoincrement())
+  text       String
+  person     Person      @relation(fields: [personId], references: [id])
+  personId   Int
+  utterances Utterance[]
+  createdAt  DateTime    @default(now())
+
   @@map("phrases")
+}
+
+// Cada "+1" é um evento com data — total e mensal viram COUNT com filtro,
+// e qualquer recorte futuro (semana, ano) sai sem migração.
+model Utterance {
+  id       Int      @id @default(autoincrement())
+  phrase   Phrase   @relation(fields: [phraseId], references: [id], onDelete: Cascade)
+  phraseId Int
+  saidAt   DateTime @default(now())
+
+  @@index([phraseId, saidAt])
+  @@index([saidAt])
+  @@map("utterances")
 }
