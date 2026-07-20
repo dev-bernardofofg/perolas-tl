@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PessoasRouteImport } from './routes/pessoas'
 import { Route as RankingRouteImport } from './routes/ranking'
+import { Route as RetroRouteImport } from './routes/retro'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
+import { Route as PIdRouteImport } from './routes/p.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,9 +31,19 @@ const RankingRoute = RankingRouteImport.update({
   path: '/ranking',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RetroRoute = RetroRouteImport.update({
+  id: '/retro',
+  path: '/retro',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEventsRoute = ApiEventsRouteImport.update({
   id: '/api/events',
   path: '/api/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PIdRoute = PIdRouteImport.update({
+  id: '/p/$id',
+  path: '/p/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -39,34 +51,49 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/pessoas': typeof PessoasRoute
   '/ranking': typeof RankingRoute
+  '/retro': typeof RetroRoute
   '/api/events': typeof ApiEventsRoute
+  '/p/$id': typeof PIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pessoas': typeof PessoasRoute
   '/ranking': typeof RankingRoute
+  '/retro': typeof RetroRoute
   '/api/events': typeof ApiEventsRoute
+  '/p/$id': typeof PIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/pessoas': typeof PessoasRoute
   '/ranking': typeof RankingRoute
+  '/retro': typeof RetroRoute
   '/api/events': typeof ApiEventsRoute
+  '/p/$id': typeof PIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/pessoas' | '/ranking' | '/api/events'
+  fullPaths: '/' | '/pessoas' | '/ranking' | '/retro' | '/api/events' | '/p/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/pessoas' | '/ranking' | '/api/events'
-  id: '__root__' | '/' | '/pessoas' | '/ranking' | '/api/events'
+  to: '/' | '/pessoas' | '/ranking' | '/retro' | '/api/events' | '/p/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/pessoas'
+    | '/ranking'
+    | '/retro'
+    | '/api/events'
+    | '/p/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PessoasRoute: typeof PessoasRoute
   RankingRoute: typeof RankingRoute
+  RetroRoute: typeof RetroRoute
   ApiEventsRoute: typeof ApiEventsRoute
+  PIdRoute: typeof PIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -92,11 +119,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RankingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/retro': {
+      id: '/retro'
+      path: '/retro'
+      fullPath: '/retro'
+      preLoaderRoute: typeof RetroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/events': {
       id: '/api/events'
       path: '/api/events'
       fullPath: '/api/events'
       preLoaderRoute: typeof ApiEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$id': {
+      id: '/p/$id'
+      path: '/p/$id'
+      fullPath: '/p/$id'
+      preLoaderRoute: typeof PIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -106,7 +147,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PessoasRoute: PessoasRoute,
   RankingRoute: RankingRoute,
+  RetroRoute: RetroRoute,
   ApiEventsRoute: ApiEventsRoute,
+  PIdRoute: PIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
