@@ -53,6 +53,13 @@ projeto Neon).
 | `pnpm db:seed`     | Popula pérolas de demonstração     |
 | `pnpm test`        | Vitest                             |
 
+## Modo master
+
+A curadoria (apagar/editar pérolas, mesclar/remover pessoas) exige o **modo
+master**: entrada discreta no rodapé, senha única definida na env
+`MASTER_PASSWORD` (no deploy, configure-a no ambiente). Registrar pérolas e
+os botões +1/−1 continuam livres para todo mundo.
+
 ## Regras do projeto
 
 - Toda leitura/escrita passa por server functions (`src/server/phrases.ts`) —
