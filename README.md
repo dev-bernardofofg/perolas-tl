@@ -53,6 +53,11 @@ projeto Neon).
 | `pnpm db:seed`     | Popula pérolas de demonstração     |
 | `pnpm test`        | Vitest                             |
 
+## Som do +1
+
+Coloque um MP3 curto em `public/plus-one.mp3` e o botão +1 passa a tocá-lo.
+Sem o arquivo, nada toca e nada quebra.
+
 ## Modo master
 
 A curadoria (apagar/editar pérolas, mesclar/remover pessoas) exige o **modo

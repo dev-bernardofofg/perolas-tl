@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { phrasesCollection } from '#/db-collections/phrases'
 import { masterQueryOptions } from '#/lib/master-query'
+import { playPlusOne } from '#/lib/sound'
 import { showErrorToast, showSuccessToast } from '#/lib/toast'
 import type { Phrase } from '#/db-collections/phrases'
 
@@ -23,6 +24,7 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
   const isMaster = master?.isMaster ?? false
 
   const handlePlusOne = () => {
+    playPlusOne()
     const tx = phrasesCollection.update(phrase.id, (draft) => {
       draft.monthCount += 1
       draft.totalCount += 1
