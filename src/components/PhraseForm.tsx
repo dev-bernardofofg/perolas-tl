@@ -7,6 +7,11 @@ import { peopleQueryOptions } from '#/lib/people-query'
 import { normalizeName, slugifyName } from '#/lib/normalize'
 import { showErrorToast } from '#/lib/toast'
 
+type PhraseFormProps = {
+  // usado pelo modal para fechar após persistir com sucesso
+  onSuccess?: () => void
+}
+
 function validateText(value: string) {
   return value.trim() ? undefined : 'A frase não pode ficar em branco 😅'
 }
@@ -15,7 +20,7 @@ function validateAuthor(value: string) {
   return value.trim() ? undefined : 'Toda pérola tem um autor — entrega quem foi 👉'
 }
 
-export default function PhraseForm() {
+export default function PhraseForm({ onSuccess }: PhraseFormProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { data: people } = useQuery(peopleQueryOptions)
 
@@ -42,7 +47,8 @@ export default function PhraseForm() {
         // a invalidação de /pessoas e /ranking acontece no onInsert da coleção
         await tx.isPersisted.promise
         form.reset()
-        textareaRef.current?.focus()
+        if (onSuccess) onSuccess()
+        else textareaRef.current?.focus()
       } catch {
         // O TanStack DB já desfez o card otimista; só avisamos e preservamos o form
         showErrorToast('Ops! Não conseguimos registrar a pérola. Tenta de novo 🙈')
@@ -50,7 +56,7 @@ export default function PhraseForm() {
     },
   })
 
-  useHotkey('Mod+K', () => textareaRef.current?.focus())
+  // Mod+K (abrir) vive no PhraseFormModal; aqui só o envio rápido
   useHotkey('Mod+Enter', () => void form.handleSubmit())
 
   return (
