@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { prisma } from '#/db'
+import { masterMiddleware } from '#/server/auth'
 import { normalizeName, slugifyName } from '#/lib/normalize'
 import { PERIOD_REGEX, PERIOD_TOTAL, currentPeriod, monthRange } from '#/lib/month'
 
@@ -128,6 +129,7 @@ const UpdatePhraseSchema = z.object({
 })
 
 export const updatePhrase = createServerFn({ method: 'POST' })
+  .middleware([masterMiddleware])
   .validator(UpdatePhraseSchema)
   .handler(({ data }) =>
     prisma.phrase.update({
@@ -137,6 +139,7 @@ export const updatePhrase = createServerFn({ method: 'POST' })
   )
 
 export const deletePhrase = createServerFn({ method: 'POST' })
+  .middleware([masterMiddleware])
   .validator(z.object({ id: z.number().int().positive('Id inválido') }))
   .handler(async ({ data }) => {
     // utterances caem em cascata (onDelete: Cascade no schema)

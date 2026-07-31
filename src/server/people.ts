@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { prisma } from '#/db'
+import { masterMiddleware } from '#/server/auth'
 import { normalizeName, slugifyName } from '#/lib/normalize'
 import { currentDay } from '#/lib/month'
 
@@ -155,6 +156,7 @@ const MergePeopleSchema = z
 // Para quando o slug não pegou a duplicata (ex.: "Rafa" vs "Rafael Lins"):
 // move todas as pérolas da origem para o destino e apaga a origem.
 export const mergePeople = createServerFn({ method: 'POST' })
+  .middleware([masterMiddleware])
   .validator(MergePeopleSchema)
   .handler(({ data }) =>
     prisma.$transaction(async (tx) => {
@@ -173,6 +175,7 @@ export const mergePeople = createServerFn({ method: 'POST' })
   )
 
 export const deletePerson = createServerFn({ method: 'POST' })
+  .middleware([masterMiddleware])
   .validator(z.object({ id: z.number().int().positive('Id inválido') }))
   .handler(async ({ data }) => {
     const phraseCount = await prisma.phrase.count({

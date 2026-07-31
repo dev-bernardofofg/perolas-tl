@@ -82,10 +82,17 @@ const columns = [
   }),
 ]
 
-export default function PeopleTable({ data }: { data: Array<PersonRow> }) {
+export default function PeopleTable({
+  data,
+  isMaster = false,
+}: {
+  data: Array<PersonRow>
+  isMaster?: boolean
+}) {
   const table = useReactTable({
     data,
-    columns,
+    // coluna de remoção só existe em modo master (o servidor revalida)
+    columns: isMaster ? columns : columns.filter((c) => c.id !== 'actions'),
     getCoreRowModel: getCoreRowModel(),
   })
 

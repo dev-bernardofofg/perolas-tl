@@ -1,7 +1,16 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { phrasesCollection } from '#/db-collections/phrases'
+import { masterQueryOptions } from '#/lib/master-query'
 import { showErrorToast, showSuccessToast } from '#/lib/toast'
 import type { Phrase } from '#/db-collections/phrases'
+
+function curationErrorToast(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : String(error)
+  showErrorToast(
+    message.includes('master') ? 'Ação restrita ao modo master 🔑' : fallback,
+  )
+}
 
 export default function PhraseCard({ phrase }: { phrase: Phrase }) {
   // Cards recém-inseridos ainda não confirmados pelo servidor têm id temporário
@@ -10,6 +19,8 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState('')
   const [editContext, setEditContext] = useState('')
+  const { data: master } = useQuery(masterQueryOptions)
+  const isMaster = master?.isMaster ?? false
 
   const handlePlusOne = () => {
     const tx = phrasesCollection.update(phrase.id, (draft) => {
@@ -50,8 +61,11 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
       draft.text = text
       draft.context = context
     })
-    tx.isPersisted.promise.catch(() => {
-      showErrorToast('Ops! Não conseguimos salvar a edição. Tenta de novo 🙈')
+    tx.isPersisted.promise.catch((error) => {
+      curationErrorToast(
+        error,
+        'Ops! Não conseguimos salvar a edição. Tenta de novo 🙈',
+      )
     })
   }
 
@@ -61,8 +75,11 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
     )
     if (!ok) return
     const tx = phrasesCollection.delete(phrase.id)
-    tx.isPersisted.promise.catch(() => {
-      showErrorToast('Ops! Não conseguimos apagar a pérola. Tenta de novo 🙈')
+    tx.isPersisted.promise.catch((error) => {
+      curationErrorToast(
+        error,
+        'Ops! Não conseguimos apagar a pérola. Tenta de novo 🙈',
+      )
     })
   }
 
@@ -86,26 +103,30 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
         >
           📤
         </button>
-        <button
-          type="button"
-          className="btn-icon"
-          onClick={startEditing}
-          disabled={isPending || isEditing}
-          aria-label={`Editar a pérola de ${phrase.personName}`}
-          title="Corrigir typo / editar historinha"
-        >
-          ✏️
-        </button>
-        <button
-          type="button"
-          className="btn-icon"
-          onClick={handleDelete}
-          disabled={isPending}
-          aria-label={`Apagar a pérola de ${phrase.personName}`}
-          title="Apagar pérola (e histórico)"
-        >
-          🗑️
-        </button>
+        {isMaster && (
+          <>
+            <button
+              type="button"
+              className="btn-icon"
+              onClick={startEditing}
+              disabled={isPending || isEditing}
+              aria-label={`Editar a pérola de ${phrase.personName}`}
+              title="Corrigir typo / editar historinha"
+            >
+              ✏️
+            </button>
+            <button
+              type="button"
+              className="btn-icon"
+              onClick={handleDelete}
+              disabled={isPending}
+              aria-label={`Apagar a pérola de ${phrase.personName}`}
+              title="Apagar pérola (e histórico)"
+            >
+              🗑️
+            </button>
+          </>
+        )}
       </div>
 
       {isEditing ? (

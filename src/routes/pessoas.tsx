@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { peopleQueryOptions } from '#/lib/people-query'
+import { masterQueryOptions } from '#/lib/master-query'
 import PeopleTable from '#/components/PeopleTable'
 import MergePeoplePanel from '#/components/MergePeoplePanel'
 
@@ -20,6 +21,8 @@ export const Route = createFileRoute('/pessoas')({
 
 function PeoplePage() {
   const { data, isLoading, isError, refetch } = useQuery(peopleQueryOptions)
+  const { data: master } = useQuery(masterQueryOptions)
+  const isMaster = master?.isMaster ?? false
 
   if (isError) {
     return (
@@ -68,8 +71,8 @@ function PeoplePage() {
         </div>
       ) : (
         <>
-          <PeopleTable data={data} />
-          <MergePeoplePanel people={data} />
+          <PeopleTable data={data} isMaster={isMaster} />
+          {isMaster && <MergePeoplePanel people={data} />}
         </>
       )}
     </main>
