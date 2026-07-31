@@ -5,6 +5,14 @@ export function normalizeName(name: string) {
   return name.trim().replace(/\s+/g, ' ')
 }
 
+// Para busca acento-insensível: "nao" acha "Não".
+export function searchable(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+}
+
 // "João  Silva " -> "joao-silva": minúsculas, sem acento, espaços colapsados.
 // É a chave única que impede "Rafael lins" e "Rafael Lins" de duplicar.
 export function slugifyName(name: string) {
