@@ -1,8 +1,11 @@
 import { Link, useNavigate } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import { useHotkeySequence } from '@tanstack/react-hotkeys'
+import { masterQueryOptions } from '#/lib/master-query'
 
 export default function Header() {
   const navigate = useNavigate()
+  const { data: master } = useQuery(masterQueryOptions)
 
   // Navegação estilo Vim: "g h" home, "g r" ranking, "g p" pessoas.
   // Teclas simples são ignoradas enquanto o usuário digita em inputs (padrão da lib).
@@ -46,6 +49,15 @@ export default function Header() {
           >
             ✨ Retrô
           </Link>
+          {master?.isMaster && (
+            <Link
+              to="/auditoria"
+              className="nav-link"
+              activeProps={{ className: 'nav-link is-active' }}
+            >
+              🕵️ Auditoria
+            </Link>
+          )}
         </div>
       </nav>
     </header>

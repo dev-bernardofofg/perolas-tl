@@ -10,6 +10,7 @@ import {
 } from '#/lib/month'
 import TopPhrasesTable from '#/components/ranking/TopPhrasesTable'
 import TopAuthorsTable from '#/components/ranking/TopAuthorsTable'
+import ActorRankTable from '#/components/ranking/ActorRankTable'
 
 const rankingQueryOptions = (period: string) =>
   queryOptions({
@@ -167,6 +168,38 @@ function RankingPage() {
             </h2>
             <TopAuthorsTable data={data.topAuthors} />
           </section>
+
+          {data.incentivadores.length > 0 && (
+            <section
+              className="ranking-section"
+              aria-labelledby="top-incentivadores"
+            >
+              <h2 id="top-incentivadores" className="section-title">
+                📣 Maiores Incentivadores
+              </h2>
+              <p className="merge-hint">Quem mais deu +1 nas pérolas alheias.</p>
+              <ActorRankTable
+                data={data.incentivadores}
+                totalHeader="+1 dados"
+              />
+            </section>
+          )}
+
+          {data.deduradores.length > 0 && (
+            <section
+              className="ranking-section"
+              aria-labelledby="top-deduradores"
+            >
+              <h2 id="top-deduradores" className="section-title">
+                🕵️ Deduradores
+              </h2>
+              <p className="merge-hint">
+                Quem mais registra pérola no acervo — o jornalismo investigativo
+                do escritório.
+              </p>
+              <ActorRankTable data={data.deduradores} totalHeader="Registros" />
+            </section>
+          )}
         </>
       )}
     </main>

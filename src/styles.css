@@ -374,6 +374,47 @@ kbd {
   font-weight: 700;
 }
 
+.footer-identity {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.who-chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.who-chip:hover {
+  border-color: var(--grape);
+}
+
+.who-chip.is-unknown {
+  border-color: color-mix(in oklab, var(--coral) 55%, var(--line));
+  background: color-mix(in oklab, var(--coral) 10%, var(--card));
+  animation: who-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes who-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 107, 107, 0);
+  }
+}
+
 .master-toggle {
   border: none;
   background: transparent;

@@ -2,6 +2,8 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { prisma } from '#/db'
 import { masterMiddleware } from '#/server/auth'
+import { requireActorId } from '#/server/identity.server'
+import { logAction } from '#/server/audit.server'
 import { normalizeName, slugifyName } from '#/lib/normalize'
 import { currentDay } from '#/lib/month'
 
@@ -158,8 +160,9 @@ const MergePeopleSchema = z
 export const mergePeople = createServerFn({ method: 'POST' })
   .middleware([masterMiddleware])
   .validator(MergePeopleSchema)
-  .handler(({ data }) =>
-    prisma.$transaction(async (tx) => {
+  .handler(async ({ data }) => {
+    const actorId = await requireActorId()
+    const result = await prisma.$transaction(async (tx) => {
       const [source, target] = await Promise.all([
         tx.person.findUnique({ where: { id: data.sourceId } }),
         tx.person.findUnique({ where: { id: data.targetId } }),
@@ -169,22 +172,47 @@ export const mergePeople = createServerFn({ method: 'POST' })
         where: { personId: data.sourceId },
         data: { personId: data.targetId },
       })
+      // autoria e trilha também migram — a identidade continua no destino
+      await tx.utterance.updateMany({
+        where: { actorId: data.sourceId },
+        data: { actorId: data.targetId },
+      })
+      await tx.auditLog.updateMany({
+        where: { actorId: data.sourceId },
+        data: { actorId: data.targetId },
+      })
       await tx.person.delete({ where: { id: data.sourceId } })
-      return { moved: moved.count, target: target.name }
-    }),
-  )
+      return { moved: moved.count, source: source.name, target: target.name }
+    })
+    await logAction({
+      action: 'people.merge',
+      actorId,
+      summary: `mesclou ${result.source} em ${result.target} (${result.moved} pérola(s))`,
+    })
+    return { moved: result.moved, target: result.target }
+  })
 
 export const deletePerson = createServerFn({ method: 'POST' })
   .middleware([masterMiddleware])
   .validator(z.object({ id: z.number().int().positive('Id inválido') }))
   .handler(async ({ data }) => {
+    const actorId = await requireActorId()
     const phraseCount = await prisma.phrase.count({
       where: { personId: data.id },
     })
     if (phraseCount > 0) {
       throw new Error('Só dá para remover quem não tem pérolas no catálogo')
     }
+    const person = await prisma.person.findUnique({
+      where: { id: data.id },
+      select: { name: true },
+    })
     await prisma.person.delete({ where: { id: data.id } })
+    await logAction({
+      action: 'person.delete',
+      actorId,
+      summary: `removeu ${person?.name ?? `#${data.id}`} do elenco`,
+    })
     return { deleted: true }
   })
 

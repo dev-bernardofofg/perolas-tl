@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuditoriaRouteImport } from './routes/auditoria'
 import { Route as PessoasRouteImport } from './routes/pessoas'
 import { Route as RankingRouteImport } from './routes/ranking'
 import { Route as RetroRouteImport } from './routes/retro'
@@ -19,6 +20,11 @@ import { Route as PIdRouteImport } from './routes/p.$id'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuditoriaRoute = AuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PessoasRoute = PessoasRouteImport.update({
@@ -49,6 +55,7 @@ const PIdRoute = PIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auditoria': typeof AuditoriaRoute
   '/pessoas': typeof PessoasRoute
   '/ranking': typeof RankingRoute
   '/retro': typeof RetroRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auditoria': typeof AuditoriaRoute
   '/pessoas': typeof PessoasRoute
   '/ranking': typeof RankingRoute
   '/retro': typeof RetroRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auditoria': typeof AuditoriaRoute
   '/pessoas': typeof PessoasRoute
   '/ranking': typeof RankingRoute
   '/retro': typeof RetroRoute
@@ -74,12 +83,27 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/pessoas' | '/ranking' | '/retro' | '/api/events' | '/p/$id'
+  fullPaths:
+    | '/'
+    | '/auditoria'
+    | '/pessoas'
+    | '/ranking'
+    | '/retro'
+    | '/api/events'
+    | '/p/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/pessoas' | '/ranking' | '/retro' | '/api/events' | '/p/$id'
+  to:
+    | '/'
+    | '/auditoria'
+    | '/pessoas'
+    | '/ranking'
+    | '/retro'
+    | '/api/events'
+    | '/p/$id'
   id:
     | '__root__'
     | '/'
+    | '/auditoria'
     | '/pessoas'
     | '/ranking'
     | '/retro'
@@ -89,6 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuditoriaRoute: typeof AuditoriaRoute
   PessoasRoute: typeof PessoasRoute
   RankingRoute: typeof RankingRoute
   RetroRoute: typeof RetroRoute
@@ -103,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auditoria': {
+      id: '/auditoria'
+      path: '/auditoria'
+      fullPath: '/auditoria'
+      preLoaderRoute: typeof AuditoriaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pessoas': {
@@ -145,6 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuditoriaRoute: AuditoriaRoute,
   PessoasRoute: PessoasRoute,
   RankingRoute: RankingRoute,
   RetroRoute: RetroRoute,

@@ -18,9 +18,30 @@ export default function ActivityFeed() {
           <li key={entry.id} className="feed-item">
             <span aria-hidden="true">{entry.isFirst ? '📌' : '🔁'}</span>
             <span className="feed-text">
-              <strong>{entry.personName}</strong>{' '}
-              {entry.isFirst ? 'entrou pro acervo com' : 'repetiu'}{' '}
-              <em>“{entry.text}”</em>
+              {entry.isFirst ? (
+                entry.actorName ? (
+                  <>
+                    <strong>{entry.actorName}</strong> registrou{' '}
+                    <em>“{entry.text}”</em> de{' '}
+                    <strong>{entry.personName}</strong>
+                  </>
+                ) : (
+                  <>
+                    <strong>{entry.personName}</strong> entrou pro acervo com{' '}
+                    <em>“{entry.text}”</em>
+                  </>
+                )
+              ) : entry.actorName ? (
+                <>
+                  <strong>{entry.actorName}</strong> deu +1 em{' '}
+                  <em>“{entry.text}”</em> de <strong>{entry.personName}</strong>
+                </>
+              ) : (
+                <>
+                  <em>“{entry.text}”</em> de{' '}
+                  <strong>{entry.personName}</strong> foi repetida
+                </>
+              )}
             </span>
             <time
               className="feed-time"

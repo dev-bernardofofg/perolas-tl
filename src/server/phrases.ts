@@ -2,6 +2,8 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { prisma } from '#/db'
 import { masterMiddleware } from '#/server/auth'
+import { requireActorId } from '#/server/identity.server'
+import { logAction } from '#/server/audit.server'
 import { normalizeName, slugifyName } from '#/lib/normalize'
 import { PERIOD_REGEX, PERIOD_TOTAL, currentPeriod, monthRange } from '#/lib/month'
 
@@ -102,15 +104,23 @@ export const createPhrase = createServerFn({ method: 'POST' })
       })
       personId = person.id
     }
+    const actorId = await requireActorId()
     // a primeira utterance nasce junto: registrar a pérola = ela foi dita 1x
-    return prisma.phrase.create({
+    const phrase = await prisma.phrase.create({
       data: {
         text: data.text,
         context: data.context,
         personId,
-        utterances: { create: {} },
+        utterances: { create: { actorId } },
       },
+      include: { person: { select: { name: true } } },
     })
+    await logAction({
+      action: 'phrase.create',
+      actorId,
+      summary: `registrou “${phrase.text}” de ${phrase.person.name}`,
+    })
+    return phrase
   })
 
 const UpdatePhraseSchema = z.object({
@@ -131,19 +141,52 @@ const UpdatePhraseSchema = z.object({
 export const updatePhrase = createServerFn({ method: 'POST' })
   .middleware([masterMiddleware])
   .validator(UpdatePhraseSchema)
-  .handler(({ data }) =>
-    prisma.phrase.update({
+  .handler(async ({ data }) => {
+    const actorId = await requireActorId()
+    const before = await prisma.phrase.findUnique({
+      where: { id: data.id },
+      select: { text: true, context: true },
+    })
+    if (!before) throw new Error('Pérola não encontrada')
+    const updated = await prisma.phrase.update({
       where: { id: data.id },
       data: { text: data.text, context: data.context || null },
-    }),
-  )
+    })
+    await logAction({
+      action: 'phrase.edit',
+      actorId,
+      summary: `editou “${before.text}”${before.text !== updated.text ? ` → “${updated.text}”` : ''}`,
+      payload: {
+        before,
+        after: { text: updated.text, context: updated.context },
+      },
+    })
+    return updated
+  })
 
 export const deletePhrase = createServerFn({ method: 'POST' })
   .middleware([masterMiddleware])
   .validator(z.object({ id: z.number().int().positive('Id inválido') }))
   .handler(async ({ data }) => {
+    const actorId = await requireActorId()
+    const phrase = await prisma.phrase.findUnique({
+      where: { id: data.id },
+      select: {
+        text: true,
+        context: true,
+        person: { select: { name: true } },
+        _count: { select: { utterances: true } },
+      },
+    })
+    if (!phrase) return { deleted: false }
     // utterances caem em cascata (onDelete: Cascade no schema)
     await prisma.phrase.delete({ where: { id: data.id } })
+    await logAction({
+      action: 'phrase.delete',
+      actorId,
+      summary: `apagou “${phrase.text}” de ${phrase.person.name} (${phrase._count.utterances} registro(s))`,
+      payload: { text: phrase.text, context: phrase.context },
+    })
     return { deleted: true }
   })
 
@@ -152,17 +195,21 @@ export type FeedEntry = {
   saidAt: Date
   text: string
   personName: string
+  actorName: string | null
   isFirst: boolean
 }
 
 export const getFeed = createServerFn({ method: 'GET' }).handler(async () => {
-  // isFirst distingue "registrou a pérola" de "disse de novo" (+1)
+  // isFirst distingue "registrou a pérola" de "disse de novo" (+1);
+  // actorName é quem clicou (null na era pré-identidade)
   const rows = await prisma.$queryRaw<Array<FeedEntry>>`
     SELECT u.id, u."saidAt", ph.text, pe.name AS "personName",
+           actor.name AS "actorName",
            (u.id = (SELECT MIN(id) FROM "utterances" WHERE "phraseId" = ph.id)) AS "isFirst"
     FROM "utterances" u
     JOIN "phrases" ph ON ph.id = u."phraseId"
     JOIN "people" pe ON pe.id = ph."personId"
+    LEFT JOIN "people" actor ON actor.id = u."actorId"
     ORDER BY u."saidAt" DESC, u.id DESC
     LIMIT 8
   `
@@ -210,18 +257,30 @@ export const getDailyPearl = createServerFn({ method: 'GET' })
 export const registerUtterance = createServerFn({ method: 'POST' })
   .validator(UtteranceSchema)
   .handler(async ({ data }) => {
+    const actorId = await requireActorId()
     await prisma.utterance.createMany({
       data: Array.from({ length: data.times }, () => ({
         phraseId: data.phraseId,
+        actorId,
       })),
+    })
+    const phrase = await prisma.phrase.findUnique({
+      where: { id: data.phraseId },
+      select: { text: true },
+    })
+    await logAction({
+      action: 'utterance.add',
+      actorId,
+      summary: `deu +${data.times} em “${phrase?.text ?? `#${data.phraseId}`}”`,
     })
     return { registered: data.times }
   })
 
 export const undoUtterance = createServerFn({ method: 'POST' })
   .validator(UtteranceSchema)
-  .handler(({ data }) =>
-    prisma.$transaction(async (tx) => {
+  .handler(async ({ data }) => {
+    const actorId = await requireActorId()
+    const result = await prisma.$transaction(async (tx) => {
       // Piso em 1: a pérola foi dita pelo menos uma vez ao ser registrada.
       // As vítimas são escolhidas por ordem determinística (mais recente
       // primeiro) — dois desfazeres concorrentes miram a mesma linha e o
@@ -241,8 +300,20 @@ export const undoUtterance = createServerFn({ method: 'POST' })
         where: { id: { in: victims.map((v) => v.id) } },
       })
       return { deleted: deletable }
-    }),
-  )
+    })
+    if (result.deleted > 0) {
+      const phrase = await prisma.phrase.findUnique({
+        where: { id: data.phraseId },
+        select: { text: true },
+      })
+      await logAction({
+        action: 'utterance.undo',
+        actorId,
+        summary: `desfez ${result.deleted} registro(s) de “${phrase?.text ?? `#${data.phraseId}`}”`,
+      })
+    }
+    return result
+  })
 
 export const getRanking = createServerFn({ method: 'GET' })
   .validator(RankingSchema)
@@ -251,7 +322,8 @@ export const getRanking = createServerFn({ method: 'GET' })
     const start = range?.start ?? new Date(0)
     const end = range?.end ?? new Date('3000-01-01T00:00:00Z')
 
-    const [topPhrases, topAuthors, months] = await Promise.all([
+    const [topPhrases, topAuthors, incentivadores, deduradores, months] =
+      await Promise.all([
       prisma.$queryRaw<
         Array<{ id: number; text: string; personName: string; count: number }>
       >`
@@ -278,6 +350,28 @@ export const getRanking = createServerFn({ method: 'GET' })
         ORDER BY total DESC, author ASC
         LIMIT 10
       `,
+      // Incentivadores: +1s dados (exclui a utterance de registro da pérola)
+      prisma.$queryRaw<Array<{ name: string; total: number }>>`
+        SELECT pe.name, COUNT(*)::int AS total
+        FROM "utterances" u
+        JOIN "people" pe ON pe.id = u."actorId"
+        WHERE u."saidAt" >= ${start} AND u."saidAt" < ${end}
+          AND u.id <> (SELECT MIN(id) FROM "utterances" WHERE "phraseId" = u."phraseId")
+        GROUP BY pe.id, pe.name
+        ORDER BY total DESC, pe.name ASC
+        LIMIT 10
+      `,
+      // Deduradores: registros de pérola (a primeira utterance de cada)
+      prisma.$queryRaw<Array<{ name: string; total: number }>>`
+        SELECT pe.name, COUNT(*)::int AS total
+        FROM "utterances" u
+        JOIN "people" pe ON pe.id = u."actorId"
+        WHERE u."saidAt" >= ${start} AND u."saidAt" < ${end}
+          AND u.id = (SELECT MIN(id) FROM "utterances" WHERE "phraseId" = u."phraseId")
+        GROUP BY pe.id, pe.name
+        ORDER BY total DESC, pe.name ASC
+        LIMIT 10
+      `,
       // saidAt é timestamp naive em UTC: marca como UTC e converte pra Recife
       prisma.$queryRaw<Array<{ period: string }>>`
         SELECT DISTINCT to_char(
@@ -292,6 +386,8 @@ export const getRanking = createServerFn({ method: 'GET' })
     return {
       topPhrases,
       topAuthors,
+      incentivadores,
+      deduradores,
       availableMonths: months.map((m) => m.period),
     }
   })
