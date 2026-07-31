@@ -58,6 +58,14 @@ projeto Neon).
 Coloque um MP3 curto em `public/plus-one.mp3` e o botão +1 passa a tocá-lo.
 Sem o arquivo, nada toca e nada quebra.
 
+## Identidade e rastreio
+
+Para escrever (registrar pérola, +1/−1) é preciso dizer **quem você é** — o
+modal "Quem é você?" no rodapé cria/escolhe a pessoa e guarda num cookie.
+Com isso o feed mostra quem fez o quê, o ranking ganha **Incentivadores** e
+**Deduradores**, e toda ação (inclusive edições e exclusões, com
+antes/depois) fica na trilha de **/auditoria** (visível só no modo master).
+
 ## Modo master
 
 A curadoria (apagar/editar pérolas, mesclar/remover pessoas) exige o **modo
