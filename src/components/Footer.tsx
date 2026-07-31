@@ -1,4 +1,5 @@
 import MasterPanel from '#/components/MasterPanel'
+import WhoAmI from '#/components/WhoAmI'
 
 export default function Footer() {
   return (
@@ -14,7 +15,10 @@ export default function Footer() {
           Feito com TanStack Start + Prisma + Neon · Sem pérolas foram feridas na
           produção deste app 🦪
         </p>
-        <MasterPanel />
+        <div className="footer-identity">
+          <WhoAmI />
+          <MasterPanel />
+        </div>
       </div>
     </footer>
   )

@@ -24,10 +24,26 @@ CREATE TABLE IF NOT EXISTS "phrases" (
 CREATE TABLE IF NOT EXISTS "utterances" (
     "id" SERIAL NOT NULL,
     "phraseId" INTEGER NOT NULL,
+    "actorId" INTEGER,
     "saidAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "utterances_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "utterances_phraseId_fkey" FOREIGN KEY ("phraseId") REFERENCES "phrases"("id") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "utterances_phraseId_fkey" FOREIGN KEY ("phraseId") REFERENCES "phrases"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "utterances_actorId_fkey" FOREIGN KEY ("actorId") REFERENCES "people"("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS "utterances_phraseId_saidAt_idx" ON "utterances"("phraseId", "saidAt");
 CREATE INDEX IF NOT EXISTS "utterances_saidAt_idx" ON "utterances"("saidAt");
+CREATE INDEX IF NOT EXISTS "utterances_actorId_idx" ON "utterances"("actorId");
+
+CREATE TABLE IF NOT EXISTS "audit_logs" (
+    "id" SERIAL NOT NULL,
+    "action" TEXT NOT NULL,
+    "actorId" INTEGER,
+    "summary" TEXT NOT NULL,
+    "payload" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "audit_logs_actorId_fkey" FOREIGN KEY ("actorId") REFERENCES "people"("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS "audit_logs_createdAt_idx" ON "audit_logs"("createdAt");

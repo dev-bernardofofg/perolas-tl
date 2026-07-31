@@ -8,11 +8,13 @@ datasource db {
 }
 
 model Person {
-  id        Int      @id @default(autoincrement())
-  name      String
-  slug      String   @unique
-  phrases   Phrase[]
-  createdAt DateTime @default(now())
+  id              Int         @id @default(autoincrement())
+  name            String
+  slug            String      @unique
+  phrases         Phrase[]
+  actedUtterances Utterance[] @relation("UtteranceActor")
+  auditLogs       AuditLog[]
+  createdAt       DateTime    @default(now())
 
   @@map("people")
 }
@@ -36,9 +38,28 @@ model Utterance {
   id       Int      @id @default(autoincrement())
   phrase   Phrase   @relation(fields: [phraseId], references: [id], onDelete: Cascade)
   phraseId Int
+  // quem clicou (nullable: histórico da era pré-identidade)
+  actor    Person?  @relation("UtteranceActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorId  Int?
   saidAt   DateTime @default(now())
 
   @@index([phraseId, saidAt])
   @@index([saidAt])
+  @@index([actorId])
   @@map("utterances")
+}
+
+// Trilha de auditoria: sobrevive à exclusão do que descreve (sem FK para a
+// pérola; resumo humano desnormalizado + payload com antes/depois).
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  actor     Person?  @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorId   Int?
+  summary   String
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("audit_logs")
 }

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { phrasesCollection } from '#/db-collections/phrases'
 import { masterQueryOptions } from '#/lib/master-query'
+import { whoQueryOptions } from '#/lib/who-query'
+import { requestIdentity } from '#/lib/identity-modal'
 import { playPlusOne } from '#/lib/sound'
 import { showErrorToast, showSuccessToast } from '#/lib/toast'
 import type { Phrase } from '#/db-collections/phrases'
@@ -22,8 +24,18 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
   const [editContext, setEditContext] = useState('')
   const { data: master } = useQuery(masterQueryOptions)
   const isMaster = master?.isMaster ?? false
+  const { data: who } = useQuery(whoQueryOptions)
+  const isIdentified = Boolean(who?.person)
+
+  // escrever exige identidade: sem ela, o clique abre o "Quem é você?"
+  const gateIdentity = () => {
+    if (isIdentified) return true
+    requestIdentity()
+    return false
+  }
 
   const handlePlusOne = () => {
+    if (!gateIdentity()) return
     playPlusOne()
     const tx = phrasesCollection.update(phrase.id, (draft) => {
       draft.monthCount += 1
@@ -35,6 +47,7 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
   }
 
   const handleMinusOne = () => {
+    if (!gateIdentity()) return
     if (phrase.totalCount <= 1) return
     const tx = phrasesCollection.update(phrase.id, (draft) => {
       // o -1 remove a utterance mais recente; se ela for deste mês, o contador
@@ -54,6 +67,7 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
   }
 
   const saveEdit = () => {
+    if (!gateIdentity()) return
     const text = editText.trim()
     if (!text) return
     const context = editContext.trim() || null
@@ -72,6 +86,7 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
   }
 
   const handleDelete = () => {
+    if (!gateIdentity()) return
     const ok = window.confirm(
       `Apagar a pérola "${phrase.text}" e todo o histórico dela? Essa não tem -1.`,
     )
