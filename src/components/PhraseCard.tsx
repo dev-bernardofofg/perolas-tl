@@ -195,7 +195,6 @@ export default function PhraseCard({ phrase }: { phrase: Phrase }) {
 
       <div className="pearl-card-footer">
         <div className="pearl-meta">
-          <span className="pearl-author">🗣️ {phrase.personName}</span>
           <time
             className="pearl-date"
             dateTime={new Date(phrase.createdAt).toISOString()}

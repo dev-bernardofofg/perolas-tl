@@ -4,8 +4,8 @@ import { phrasesCollection } from '#/db-collections/phrases'
 import { dailyPearlQueryOptions, feedQueryOptions } from '#/lib/home-queries'
 import DailyPearl from '#/components/DailyPearl'
 import ActivityFeed from '#/components/ActivityFeed'
+import PhraseBoard from '#/components/PhraseBoard'
 import PhraseFormModal from '#/components/PhraseFormModal'
-import PhraseList from '#/components/PhraseList'
 import SearchBar from '#/components/SearchBar'
 
 export const Route = createFileRoute('/')({
@@ -21,7 +21,7 @@ export const Route = createFileRoute('/')({
         context.queryClient.ensureQueryData(dailyPearlQueryOptions()),
       ])
     } catch {
-      // Falha de rede aqui vira o banner de erro da PhraseList — app não quebra
+      // Falha de rede aqui vira o banner de erro da PhraseBoard — app não quebra
     }
     return null
   },
@@ -32,22 +32,23 @@ function HomePage() {
   const [query, setQuery] = useState('')
 
   return (
-    <main className="page-wrap page-main">
-      <div className="home-header">
-        <div>
-          <h1 className="page-title">💬 Pérolas do Escritório</h1>
-          <p className="page-subtitle">
-            Aquelas frases que ninguém esquece — agora com contador oficial.
-          </p>
+    <main className="page-main">
+      <div className="page-wrap">
+        <div className="home-header">
+          <div>
+            <h1 className="page-title">💬 Pérolas do Escritório</h1>
+            <p className="page-subtitle">
+              Aquelas frases que ninguém esquece — agora com contador oficial.
+            </p>
+          </div>
+          <PhraseFormModal />
         </div>
-        <PhraseFormModal />
-      </div>
-      <DailyPearl />
-      <ActivityFeed />
-      <section aria-label="Lista de pérolas" className="list-section">
+        <DailyPearl />
+        <ActivityFeed />
         <SearchBar query={query} onChange={setQuery} />
-        <PhraseList query={query} />
-      </section>
+      </div>
+      {/* fora do .page-wrap: o board rola na horizontal até a borda da tela */}
+      <PhraseBoard query={query} />
     </main>
   )
 }
